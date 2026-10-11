@@ -212,6 +212,8 @@ const CLUBS = [
 // Elencos: posição:nome:idade:força. Escritos de memória (referência: 2025; quatro desses clubes jogam a Série B em 2026), com forças estimadas;
 // podem estar desatualizados. As vagas que faltarem no elenco são completadas com jogadores gerados.
 const SQUADS = {
+  // nomes e posições conforme a página de elenco do site oficial do clube (consulta em 11/10/2026); idades e lado dos laterais estimados
+  'Chapecoense': 'G:Rafael Santos:36:73;G:Matheus Aurélio:26:69;G:Gabriel Werner:22:66;Z:Rafael Thyere:33:73;Z:João Paulo:27:72;Z:Doma:28:71;Z:Victor Caetano:25:70;Z:Vinicius:22:68;LD:Everton:27:71;LD:Dudu:24:69;LD:Fernando:26:69;LD:Heitor:22:68;LE:Bruno Pacheco:34:73;LE:Mancha:27:71;LE:Bruno Tubarão:30:69;V:Bruno Matias:26:72;V:Rafael Carvalheira:26:72;V:Camilo:27:71;V:Vinicius Balieiro:27:70;V:David:23:68;M:Giovanni Augusto:36:74;M:Yago Felipe:31:72;M:Robert:21:70;M:Max:24:68;A:Yannick Bolasie:37:73;A:Marcinho:30:72;A:Maurício Garcez:28:72;A:Dylan Borrero:24:72;A:Túlio Eduardo:23:69;A:Rubens:22:68',
   'Flamengo': 'G:Rossi:29:82;LD:Varela:32:78;LD:Emerson Royal:26:78;Z:Léo Pereira:29:83;Z:Léo Ortiz:29:83;Z:Danilo:33:80;LE:Alex Sandro:34:80;LE:Ayrton Lucas:28:79;V:Pulgar:31:81;V:Jorginho:33:82;V:Allan:28:76;M:Arrascaeta:31:88;M:De la Cruz:28:82;M:Saúl:30:79;M:Carrascal:27:80;M:Luiz Araújo:29:80;A:Pedro:28:86;A:Bruno Henrique:34:80;A:Plata:24:80;A:Samuel Lino:25:82;A:Everton Cebolinha:29:79',
   'Palmeiras': 'G:Weverton:37:81;LD:Giay:21:76;LD:Khellven:24:76;Z:Gustavo Gómez:32:84;Z:Murilo:28:80;Z:Micael:25:76;Z:Bruno Fuchs:26:76;LE:Piquerez:27:83;V:Aníbal Moreno:26:80;V:Lucas Evangelista:30:78;V:Emiliano Martínez:26:77;M:Raphael Veiga:30:83;M:Andreas Pereira:29:81;M:Maurício:24:80;M:Felipe Anderson:32:79;A:Vitor Roque:20:83;A:Flaco López:24:83;A:Facundo Torres:25:79;A:Ramón Sosa:26:79;A:Paulinho:25:80',
   'Botafogo': 'G:John:29:80;LD:Vitinho:26:78;Z:Barboza:30:80;Z:Bastos:33:78;Z:David Ricardo:22:76;LE:Alex Telles:32:80;LE:Cuiabano:22:77;V:Marlon Freitas:30:81;V:Danilo:24:81;V:Allan:34:76;V:Newton:25:75;M:Savarino:28:82;M:Santiago Rodríguez:25:77;M:Montoro:18:76;A:Artur:27:79;A:Arthur Cabral:27:79;A:Matheus Martins:22:77;A:Joaquín Correa:31:77;A:Mastriani:32:75',
@@ -428,6 +430,100 @@ function saveDB(d) { try { localStorage.setItem(DBKEY, JSON.stringify(d)); retur
 function hasCustomDB() { try { return !!localStorage.getItem(DBKEY); } catch (e) { return false; } }
 function resetDB() { try { localStorage.removeItem(DBKEY); } catch (e) { /* sem armazenamento */ } }
 
+/* ---------- importação de times do Brasfoot (.ban) ---------- */
+
+// Leitor mínimo do formato de serialização Java usado nos .ban: um objeto "time" com a lista de jogadores.
+function parseBan(buf) {
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength), dec = new TextDecoder('utf-8'), handles = [];
+  let o = 0;
+  const u8 = () => dv.getUint8(o++), u16 = () => { const v = dv.getUint16(o); o += 2; return v; }, i32 = () => { const v = dv.getInt32(o); o += 4; return v; };
+  const str = len => { const v = dec.decode(buf.subarray(o, o + len)); o += len; return v; };
+  if (u16() !== 0xACED) throw new Error('não é um arquivo .ban');
+  u16();
+  function classDesc() {
+    const tc = u8();
+    if (tc === 0x70) return null;
+    if (tc === 0x71) return handles[i32() - 0x7E0000];
+    if (tc !== 0x72) throw new Error('formato inesperado');
+    const cd = { name: str(u16()), fields: [] };
+    o += 8; // serialVersionUID
+    handles.push(cd);
+    cd.flags = u8();
+    for (let k = u16(); k > 0; k--) {
+      const type = String.fromCharCode(u8()), name = str(u16());
+      if (type === 'L' || type === '[') value();
+      cd.fields.push([type, name]);
+    }
+    while (u8() !== 0x78) { /* anotações da classe */ }
+    cd.sup = classDesc();
+    return cd;
+  }
+  function prim(t) {
+    if (t === 'I') return i32();
+    if (t === 'Z' || t === 'B') return u8();
+    if (t === 'S' || t === 'C') return u16();
+    if (t === 'J' || t === 'D') { o += 8; return 0; }
+    if (t === 'F') { o += 4; return 0; }
+    throw new Error('formato inesperado');
+  }
+  function value() {
+    const tc = u8();
+    if (tc === 0x70) return null;
+    if (tc === 0x71) return handles[i32() - 0x7E0000];
+    if (tc === 0x74) { const v = str(u16()); handles.push(v); return v; }
+    if (tc !== 0x73) throw new Error('formato inesperado');
+    const cd = classDesc(), obj = {}, chain = [];
+    handles.push(obj);
+    for (let c = cd; c; c = c.sup) chain.unshift(c);
+    for (const c of chain) {
+      for (const [t, name] of c.fields) obj[name] = (t === 'L' || t === '[') ? value() : prim(t);
+      if (c.flags & 1) { // lista: um bloco com a capacidade e depois os elementos
+        obj.items = [];
+        for (;;) {
+          const p = dv.getUint8(o);
+          if (p === 0x78) { o++; break; }
+          if (p === 0x77) { o++; const len = u8(); o += len; continue; }
+          obj.items.push(value());
+        }
+      }
+    }
+    return obj;
+  }
+  return value();
+}
+
+const BF_TRAITS = ['Colocação', 'Saída do gol', 'Reflexo', 'Pênalti', 'Armação', 'Cabeceio', 'Cruzamento', 'Desarme', 'Drible', 'Finalização', 'Marcação', 'Passe', 'Resistência', 'Velocidade'];
+const bfNorm = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+// converte os jogadores de um time do Brasfoot para o formato da base. O Brasfoot não guarda força por jogador:
+// ela é estimada pelo nível do clube na nossa lista, com bônus para titulares e estrelas.
+function bfSquad(t, idx) {
+  const base = Math.round(84 - idx * 0.55) - 2;
+  return ((t.l && t.l.items) || []).filter(p => p && typeof p.a === 'string' && p.a.trim())
+    .sort((x, y) => (y.j * 4 + y.b * 2 + y.f) - (x.j * 4 + x.b * 2 + x.f)).slice(0, MAX_SQUAD).map(p => {
+      const def = p.g === 7 || p.g === 10 || p.h === 7 || p.h === 10;
+      const pos = p.e === 0 ? 'G' : p.e === 1 ? (p.i === 1 ? 'LE' : 'LD') : p.e === 2 ? 'Z' : p.e === 3 ? (def ? 'V' : 'M') : 'A';
+      const age = clamp(p.d || 25, 15, 45);
+      const f = clamp(base + (p.j ? 9 : p.b ? 6 : 0) + (p.f ? 2 : -2) + (age < 21 ? -5 : age < 23 ? -2 : age >= 35 ? -2 : 0), 1, 99);
+      const tr = [...new Set([p.g, p.h].map(k => BF_TRAITS[k]).filter(x => x && (pos === 'G') === TRAITS.G.includes(x)))];
+      return [pos, p.a.trim().slice(0, 30), age, f, tr];
+    });
+}
+// files: [{ name, buf: Uint8Array }]. Preenche os elencos dos clubes de db que tiverem arquivo correspondente.
+function bfImport(db, files) {
+  const teams = [], res = { read: 0, bad: 0, done: [], missing: [] };
+  files.forEach(x => {
+    try { const t = parseBan(x.buf); if (t && typeof t.e === 'string' && t.l) { teams.push({ t, name: bfNorm(t.e), id: bfNorm(t.d).replace(/bra$/, ''), br: t.a === 29 }); res.read++; } else res.bad++; }
+    catch (e) { res.bad++; }
+  });
+  db.forEach((c, idx) => {
+    const k = bfNorm(c.n), ku = bfNorm(c.n.replace(/-[A-Z]{2}$/, '')) + c.uf.toLowerCase();
+    const hit = teams.filter(x => x.br && (x.name === k || x.id === k || x.name === ku || x.id === ku)).sort((a, b) => b.t.l.items.length - a.t.l.items.length)[0];
+    const sq = hit ? bfSquad(hit.t, idx) : [];
+    if (sq.length >= 11) { c.sq = sq; res.done.push(c.n); } else res.missing.push(c.n);
+  });
+  return res;
+}
+
 /* ---------- jogadores ---------- */
 
 function rawValue(f, age) {
@@ -485,17 +581,21 @@ function mkTeam(c, i) {
   t.ticket = TICKET[t.div];
   // elenco real, quando existe; as posições que faltarem são completadas com garotos gerados
   const need = SQUAD.slice();
-  c.sq.forEach(([pos, nm, age, f]) => {
+  c.sq.forEach(([pos, nm, age, f, tr]) => {
     if (!TRAITS[pos] || t.players.length >= MAX_SQUAD) return;
     age = clamp(Math.round(+age) || 25, 15, 45); f = clamp(Math.round(+f) || 50, 1, 99);
     const p = mkPlayer(pos, +f, +age, +f + (+age < 24 ? ri(2, 8) : +age < 27 ? ri(0, 3) : 0), ext);
     p.n = String(nm).slice(0, 30) || p.n; t.players.push(p);
+    if (Array.isArray(tr)) { const ok2 = tr.filter(x => (pos === 'G' ? TRAITS.G : ALLTR).includes(x)).slice(0, 2); if (ok2.length) p.tr = ok2; }
     const k = need.indexOf(pos);
     if (k >= 0) need.splice(k, 1);
   });
   const real = t.players.length > 0;
   need.forEach((pos, j) => {
-    if (real) { t.players.push(mkPlayer(pos, rep - 10 + gauss() * 3, ri(18, 22), rep + ri(-4, 6), ext)); return; }
+    if (real) { // elenco real já cheio só recebe reforço se faltar goleiro
+      if (t.players.length < MAX_SQUAD || pos === 'G') t.players.push(mkPlayer(pos, rep - 10 + gauss() * 3, ri(18, 22), rep + ri(-4, 6), ext));
+      return;
+    }
     const age = ri(18, 34);
     let f = rep - 4 + gauss() * 4.5 - (j === 2 ? 7 : 0), pot; // -4: os 11 melhores de um elenco sorteado ficam perto da força do clube
     if (age < 22) { f -= (22 - age) * 2.2; pot = rep + ri(0, 10); }
@@ -2400,7 +2500,7 @@ function vEditor() {
     <td><input type="number" min="1" max="99" value="${p[3]}" style="width:64px" onchange="edP(${i},3,this.value)"></td>
     <td><button class="mini" title="Remover jogador" onclick="edDel(${i})">✕</button></td></tr>`).join('');
   return `<div class="start" style="max-width:1300px"><div class="row" style="justify-content:space-between"><div class="logo" style="font-size:28px">Editor de <span>times</span></div>
-      <span class="row"><button onclick="edExport()">Exportar base</button><button onclick="el('impdb').click()">Importar base</button><input id="impdb" type="file" accept=".json,application/json" style="display:none" onchange="edImport(this.files[0])">
+      <span class="row"><button onclick="edBfBox()">Importar do Brasfoot</button><button onclick="edExport()">Exportar base</button><button onclick="el('impdb').click()">Importar base</button><input id="impdb" type="file" accept=".json,application/json" style="display:none" onchange="edImport(this.files[0])">
       <button onclick="confirmBox('Restaurar base padrão','Apagar todas as suas edições e voltar aos clubes e elencos que vêm com o jogo?','Restaurar',()=>{resetDB();openEditor();})">Restaurar padrão</button>
       <button class="primary" onclick="UI.view='start';render()">Concluir</button></span></div>
     <div class="panel" style="margin:14px 0;font-size:13px" class="muted">As edições ficam salvas neste navegador e valem para os <b>próximos jogos novos</b> (carreiras em andamento não mudam). Numa sala online vale a base de quem cria a sala. A ordem dos clubes define a divisão e a força inicial: os 20 primeiros são a Série A. Elencos com menos de 22 jogadores são completados com jovens gerados; clube sem nenhum jogador recebe um elenco gerado inteiro.</div>
@@ -2510,6 +2610,24 @@ function edPaste() {
   edSave(); closeModal(); render();
   alertBox('Elenco lido', `${Math.min(got.length, room)} jogador(es) adicionados ao ${esc(c.n)}.` + (got.length > room ? ` ${got.length - room} ficaram de fora (limite de ${MAX_SQUAD}).` : '') +
     (noPos ? ` ${noPos} sem posição reconhecida entraram como meia.` : '') + (noAge ? ` ${noAge} sem idade entraram com 25 anos.` : '') + ' Confira a tabela e ajuste posições e forças.');
+}
+
+function edBfBox() {
+  modal(`<h2>Importar times do Brasfoot</h2><div style="font-size:13px">Se você tem o Brasfoot (ou um patch dele) no computador, o editor consegue ler os elencos direto dos arquivos <b>.ban</b>.
+    <ol style="padding-left:18px"><li>Clique em "Escolher arquivos" e abra a pasta <b>teams</b> do seu Brasfoot.</li><li>Selecione todos os arquivos (Ctrl+A) e confirme.</li></ol>
+    São lidos nome, idade, posição e características de cada jogador. O Brasfoot não guarda força por jogador, então ela é estimada pelo nível do clube, com bônus para titulares e estrelas; ajuste depois na tabela se quiser.
+    Só os clubes que já estão na sua base são preenchidos, e o elenco atual deles é substituído. Os dados ficam apenas neste navegador.</div>
+    <input id="bffiles" type="file" multiple accept=".ban" style="margin-top:12px" onchange="edBf(this.files)">
+    <div class="row"><button onclick="closeModal()">Cancelar</button></div>`);
+}
+async function edBf(list) {
+  const files = [];
+  for (const fl of list) if (/\.ban$/i.test(fl.name)) files.push({ name: fl.name, buf: new Uint8Array(await fl.arrayBuffer()) });
+  if (!files.length) { toast('Nenhum arquivo .ban selecionado.'); return; }
+  const r = bfImport(UI.ed.db, files);
+  edSave(); closeModal(); render();
+  alertBox('Importação concluída', `${r.read} arquivo(s) lido(s)${r.bad ? `, ${r.bad} ilegível(is)` : ''}. <b>${r.done.length}</b> de ${UI.ed.db.length} clubes da base receberam elenco.` +
+    (r.missing.length ? `<div class="muted" style="margin-top:8px;font-size:13px">Sem arquivo correspondente (ficaram como estavam): ${r.missing.map(esc).join(', ')}.</div>` : ''));
 }
 
 function edExport() {
