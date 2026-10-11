@@ -185,30 +185,31 @@ const LIGHT = 'wycs';
 
 const DIVS = ['Série A', 'Série B', 'Série C', 'Série D'];
 
-// nome|UF|cores — clubes reais das Séries A a D de 2025; a ordem define a força inicial (os 20 primeiros formam a Série A)
+// nome|UF|cores — clubes reais das Séries A a C de 2026 e 20 dos 96 da Série D;
+// a ordem define a força inicial (os 20 primeiros formam a Série A)
 const CLUBS = [
-  'Flamengo|RJ|rk', 'Palmeiras|SP|gw', 'Botafogo|RJ|kw', 'Cruzeiro|MG|bw', 'Atlético-MG|MG|kw',
+  'Flamengo|RJ|rk', 'Palmeiras|SP|gw', 'Cruzeiro|MG|bw', 'Botafogo|RJ|kw', 'Atlético-MG|MG|kw',
   'Corinthians|SP|wk', 'São Paulo|SP|wr', 'Fluminense|RJ|mg', 'Internacional|RS|rw', 'Grêmio|RS|ck',
-  'Bahia|BA|br', 'Santos|SP|wk', 'Vasco|RJ|kw', 'Bragantino|SP|wr', 'Fortaleza|CE|rb',
-  'Mirassol|SP|yg', 'Ceará|CE|kw', 'Vitória|BA|rk', 'Sport|PE|rk', 'Juventude|RS|gw',
+  'Bahia|BA|br', 'Santos|SP|wk', 'Vasco|RJ|kw', 'Bragantino|SP|wr', 'Mirassol|SP|yg',
+  'Athletico-PR|PR|rk', 'Vitória|BA|rk', 'Coritiba|PR|wg', 'Chapecoense|SC|gw', 'Remo|PA|nw',
 
-  'Athletico-PR|PR|rk', 'Coritiba|PR|wg', 'Goiás|GO|gw', 'Atlético-GO|GO|rk', 'Cuiabá|MT|gy',
-  'Criciúma|SC|yk', 'Avaí|SC|bw', 'Chapecoense|SC|gw', 'América-MG|MG|gk', 'Novorizontino|SP|yk',
-  'Vila Nova|GO|rw', 'CRB|AL|rw', 'Operário-PR|PR|kw', 'Paysandu|PA|cw', 'Remo|PA|nw',
-  'Botafogo-SP|SP|rw', 'Ferroviária|SP|mw', 'Volta Redonda|RJ|yk', 'Athletic Club|MG|kw', 'Amazonas|AM|yk',
+  'Fortaleza|CE|rb', 'Ceará|CE|kw', 'Sport|PE|rk', 'Juventude|RS|gw', 'Goiás|GO|gw',
+  'Atlético-GO|GO|rk', 'Cuiabá|MT|gy', 'Criciúma|SC|yk', 'Avaí|SC|bw', 'América-MG|MG|gk',
+  'Novorizontino|SP|yk', 'Vila Nova|GO|rw', 'CRB|AL|rw', 'Operário-PR|PR|kw', 'Athletic Club|MG|kw',
+  'Botafogo-SP|SP|rw', 'Náutico|PE|rw', 'Ponte Preta|SP|kw', 'Londrina|PR|cw', 'São Bernardo|SP|yk',
 
-  'Náutico|PE|rw', 'Ponte Preta|SP|kw', 'Guarani|SP|gw', 'Londrina|PR|cw', 'Figueirense|SC|kw',
-  'CSA|AL|bw', 'ABC|RN|kw', 'Botafogo-PB|PB|kw', 'Confiança|SE|bw', 'Ypiranga|RS|yg',
-  'Caxias|RS|mw', 'São Bernardo|SP|yk', 'Brusque|SC|yg', 'Ituano|SP|rk', 'Floresta|CE|gw',
-  'Tombense|MG|rw', 'Retrô|PE|yb', 'Maringá|PR|kw', 'Anápolis|GO|rw', 'Itabaiana|SE|bw',
+  'Paysandu|PA|cw', 'Volta Redonda|RJ|yk', 'Ferroviária|SP|mw', 'Amazonas|AM|yk', 'Guarani|SP|gw',
+  'Figueirense|SC|kw', 'Santa Cruz|PE|rk', 'Botafogo-PB|PB|kw', 'Confiança|SE|bw', 'Ypiranga|RS|yg',
+  'Caxias|RS|mw', 'Brusque|SC|yg', 'Ituano|SP|rk', 'Floresta|CE|gw', 'Maringá|PR|kw',
+  'Anápolis|GO|rw', 'Itabaiana|SE|bw', 'Inter de Limeira|SP|kw', 'Barra-SC|SC|yb', 'Maranhão|MA|br',
 
-  'Santa Cruz|PE|rk', 'América-RN|RN|rw', 'Sampaio Corrêa|MA|yr', 'Portuguesa|SP|rg', 'Inter de Limeira|SP|kw',
-  'Joinville|SC|rk', 'Brasil de Pelotas|RS|ry', 'Treze|PB|kw', 'Campinense|PB|rk', 'ASA|AL|kw',
-  'Ferroviário|CE|rw', 'Manaus|AM|gw', 'Rio Branco-AC|AC|rw', 'Luverdense|MT|gw', 'Aparecidense|GO|by',
+  'CSA|AL|bw', 'ABC|RN|kw', 'América-RN|RN|rw', 'Sampaio Corrêa|MA|yr', 'Retrô|PE|yb',
+  'Tombense|MG|rw', 'Portuguesa|SP|rg', 'Joinville|SC|rk', 'Brasil de Pelotas|RS|ry', 'Treze|PB|kw',
+  'ASA|AL|kw', 'Ferroviário|CE|rw', 'Manaus|AM|gw', 'Luverdense|MT|gw', 'Aparecidense|GO|by',
   'Cascavel|PR|yk', 'Água Santa|SP|bw', 'Portuguesa-RJ|RJ|rg', 'Central|PE|kw', 'Altos|PI|gy'
 ];
 
-// Elencos da Série A: posição:nome:idade:força. Escritos de memória (referência: 2025), com forças estimadas;
+// Elencos: posição:nome:idade:força. Escritos de memória (referência: 2025; quatro desses clubes jogam a Série B em 2026), com forças estimadas;
 // podem estar desatualizados. As vagas que faltarem no elenco são completadas com jogadores gerados.
 const SQUADS = {
   'Flamengo': 'G:Rossi:29:82;LD:Varela:32:78;LD:Emerson Royal:26:78;Z:Léo Pereira:29:83;Z:Léo Ortiz:29:83;Z:Danilo:33:80;LE:Alex Sandro:34:80;LE:Ayrton Lucas:28:79;V:Pulgar:31:81;V:Jorginho:33:82;V:Allan:28:76;M:Arrascaeta:31:88;M:De la Cruz:28:82;M:Saúl:30:79;M:Carrascal:27:80;M:Luiz Araújo:29:80;A:Pedro:28:86;A:Bruno Henrique:34:80;A:Plata:24:80;A:Samuel Lino:25:82;A:Everton Cebolinha:29:79',
@@ -496,7 +497,7 @@ function mkTeam(c, i) {
   need.forEach((pos, j) => {
     if (real) { t.players.push(mkPlayer(pos, rep - 10 + gauss() * 3, ri(18, 22), rep + ri(-4, 6), ext)); return; }
     const age = ri(18, 34);
-    let f = rep + gauss() * 4.5 - (j === 2 ? 7 : 0), pot;
+    let f = rep - 4 + gauss() * 4.5 - (j === 2 ? 7 : 0), pot; // -4: os 11 melhores de um elenco sorteado ficam perto da força do clube
     if (age < 22) { f -= (22 - age) * 2.2; pot = rep + ri(0, 10); }
     else pot = f + (age < 27 ? ri(0, 4) : 0);
     t.players.push(mkPlayer(pos, f, age, pot, ext));
