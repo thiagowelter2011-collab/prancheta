@@ -1,0 +1,2598 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prancheta — Manager de Futebol</title>
+<style>
+:root {
+  --bg: #0d1411; --panel: #15201b; --panel2: #1b2922; --line: #26372e; --text: #e8f0ea; --muted: #8ea398;
+  --grass: #36c275; --grass-d: #1f8f52; --amber: #f2b632; --red: #ef5350; --blue: #5aa9ff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif; }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
+button:hover:not(:disabled) { border-color: var(--grass); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--grass); border-color: var(--grass); color: #06140c; font-weight: 700; }
+button.primary:hover:not(:disabled) { background: #49d488; }
+button.big { padding: 12px 18px; font-size: 16px; width: 100%; }
+button.mini { padding: 1px 7px; font-size: 12px; border-radius: 4px; }
+button.on { background: var(--grass-d); border-color: var(--grass); }
+button.warn.on { background: #7a5a10; border-color: var(--amber); }
+select, input { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+h1, h2, h3 { margin: 0; }
+h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
+.muted { color: var(--muted); } .r { text-align: right; } .c { text-align: center; }
+.up { color: var(--grass); } .down { color: var(--red); } .amber { color: var(--amber); }
+.cr { vertical-align: middle; flex: none; }
+.link { cursor: pointer; } .link:hover { text-decoration: underline; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.grid { display: grid; gap: 14px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; padding: 5px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 5px 6px; border-bottom: 1px solid #1c2a23; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: #192720; }
+.scroll { overflow-x: auto; }
+
+/* início */
+.start { max-width: 1100px; margin: 0 auto; padding: 40px 16px; }
+.logo { font-size: 44px; font-weight: 800; letter-spacing: -.02em; }
+.logo span { color: var(--grass); }
+.hero { text-align: center; padding: 70px 0 30px; }
+.hero p { color: var(--muted); max-width: 520px; margin: 10px auto 26px; }
+.hero .row { justify-content: center; }
+.pickgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+.club { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
+.club:hover { background: var(--panel2); }
+.club.sel { border-color: var(--grass); background: var(--panel2); }
+.club b { margin-left: auto; color: var(--muted); font-weight: 600; }
+
+/* hub */
+.top { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.top .name { font-size: 18px; font-weight: 700; }
+.top .stat { margin-left: auto; text-align: right; }
+.top .stat + .stat { margin-left: 18px; }
+.top .stat small { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.top .stat b { font-size: 15px; }
+.tabs { display: flex; gap: 2px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 10px 14px; color: var(--muted); white-space: nowrap; }
+.tabs button.on { color: var(--text); border-bottom-color: var(--grass); background: none; }
+.badge { background: var(--amber); color: #201600; border-radius: 9px; padding: 0 6px; font-size: 11px; font-weight: 700; margin-left: 4px; }
+.main { padding: 14px 16px 40px; max-width: 1400px; margin: 0 auto; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 14px; align-items: start; }
+.cols2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+
+/* elenco */
+.squad tr { cursor: pointer; }
+.squad td, .squad th { padding: 5px 4px; font-size: 13px; }
+.squad tr.sel td { background: #23402f; }
+.squad tr.out td { color: var(--muted); }
+.st { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 4px; font-size: 11px; font-weight: 700; }
+.st.T { background: var(--grass); color: #06140c; } .st.R { background: var(--amber); color: #201600; }
+.pos { display: inline-block; min-width: 34px; text-align: center; font-size: 11px; font-weight: 700; padding: 1px 4px; border-radius: 4px; background: #2a3a32; }
+.pos.G { background: #6b4e00; } .pos.Z, .pos.LD, .pos.LE { background: #153e75; } .pos.V, .pos.M { background: #1d5c3a; } .pos.A { background: #7a2323; }
+.f { font-weight: 700; }
+.tag { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+.tag.inj { background: var(--red); color: #fff; } .tag.sus { background: #b91c1c; color: #fff; } .tag.sale { background: var(--blue); color: #04192e; } .tag.yc { background: var(--amber); color: #201600; }
+.code { font-size: 34px; font-weight: 800; letter-spacing: .18em; text-align: center; margin: 8px 0 14px; color: var(--grass); user-select: all; }
+.stl { display: grid; grid-template-columns: 70px 1fr 70px; text-align: center; font-size: 13px; padding: 2px 0; }
+.stl:last-of-type { margin-bottom: 10px; }
+.chip.mine { border-color: var(--grass); }
+.tag.loan { background: var(--muted); color: #06140c; }
+.opt { padding: 10px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+.opt:hover { border-color: var(--grass); }
+.opt.sel { border-color: var(--grass); background: #1f3a2b; }
+.opt .muted { font-size: 12px; margin-top: 2px; }
+.bar { display: inline-block; width: 46px; height: 7px; background: #25342c; border-radius: 4px; overflow: hidden; vertical-align: middle; }
+.bar i { display: block; height: 100%; background: var(--grass); }
+.bar.mid i { background: var(--amber); } .bar.low i { background: var(--red); }
+.tr { color: var(--muted); font-size: 12px; }
+
+.pitch { position: relative; aspect-ratio: 68 / 88; border-radius: 10px; overflow: hidden; border: 1px solid var(--line);
+  background: repeating-linear-gradient(0deg, #1b6b3c 0 12.5%, #1f7743 12.5% 25%); }
+.pitch::before { content: ''; position: absolute; inset: 3%; border: 2px solid rgba(255,255,255,.28); }
+.pitch::after { content: ''; position: absolute; left: 25%; right: 25%; bottom: 3%; height: 15%; border: 2px solid rgba(255,255,255,.28); border-bottom: 0; }
+.slot { position: absolute; transform: translate(-50%, -50%); text-align: center; cursor: pointer; width: 74px; z-index: 1; }
+.shirt { width: 34px; height: 34px; line-height: 30px; border-radius: 50%; margin: 0 auto; font-weight: 800; font-size: 13px; border: 2px solid; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+.slot.empty .shirt { background: rgba(0,0,0,.25) !important; border: 2px dashed rgba(255,255,255,.6) !important; color: #fff !important; }
+.slot.sel .shirt { outline: 3px solid var(--amber); outline-offset: 2px; }
+.sn { font-size: 11px; font-weight: 600; text-shadow: 0 1px 2px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sn.imp { color: var(--amber); }
+.sr { font-size: 9px; color: rgba(255,255,255,.7); letter-spacing: .05em; }
+.next { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.next .vs { font-size: 16px; font-weight: 700; }
+.field { display: grid; grid-template-columns: 90px 1fr; gap: 6px 8px; align-items: center; margin-top: 10px; }
+.field select { width: 100%; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.chip { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 1px 8px; font-size: 12px; }
+
+/* tabela */
+.zone-c td:first-child { box-shadow: inset 3px 0 var(--amber); }
+.zone-u td:first-child { box-shadow: inset 3px 0 var(--grass); }
+.zone-d td:first-child { box-shadow: inset 3px 0 var(--red); }
+tr.me td { background: #1f3a2b !important; font-weight: 600; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; }
+.fx { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; padding: 4px 6px; border-bottom: 1px solid #1c2a23; }
+.fx .h { text-align: right; } .fx .sc { font-weight: 700; min-width: 54px; text-align: center; font-variant-numeric: tabular-nums; }
+.fx.me { background: #1f3a2b; }
+.res { display: inline-block; width: 18px; text-align: center; border-radius: 3px; font-size: 11px; font-weight: 700; color: #06140c; }
+.res.V { background: var(--grass); } .res.E { background: var(--muted); } .res.D { background: var(--red); color: #fff; }
+
+/* ao vivo */
+.live { max-width: 1300px; margin: 0 auto; padding: 14px 16px 40px; }
+.livehead { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.clock { font-size: 22px; font-weight: 800; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 2px 12px; min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
+.g { display: grid; grid-template-columns: 1fr 22px 22px 12px 22px 22px 1fr; gap: 6px; align-items: center; padding: 6px 4px; border-bottom: 1px solid #1c2a23; }
+.g .h { text-align: right; } .g b { text-align: center; font-size: 16px; font-variant-numeric: tabular-nums; }
+.g small { grid-column: 1 / -1; text-align: center; color: var(--muted); font-size: 11px; min-height: 14px; }
+.g.me { background: #1f3a2b; border-radius: 6px; }
+.g.flash b { color: var(--amber); }
+.score { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; text-align: center; margin-bottom: 10px; }
+.score .n { font-weight: 700; margin-top: 4px; }
+.score .big { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.msg { background: #3a2d0a; border: 1px solid var(--amber); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+.feed { max-height: 240px; overflow-y: auto; font-size: 13px; }
+.feed div { padding: 3px 0; border-bottom: 1px solid #1c2a23; }
+.feed .gol { color: var(--amber); font-weight: 700; } .feed .red, .feed .inj { color: var(--red); } .feed .yel { color: #e8d77a; } .feed .sub { color: var(--blue); }
+.feed .them { opacity: .75; }
+.lp { display: grid; grid-template-columns: 38px 1fr 26px 50px auto; gap: 6px; align-items: center; padding: 3px 4px; border-radius: 5px; cursor: pointer; font-size: 13px; }
+.lp:hover { background: var(--panel2); } .lp.sel { background: #23402f; outline: 1px solid var(--grass); }
+.lp.red, .lp.inj { opacity: .5; }
+
+/* modal / toast */
+#modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: flex-start; justify-content: center; padding: 6vh 16px; overflow-y: auto; z-index: 10; }
+#modal.show { display: flex; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; width: 100%; max-width: 480px; }
+.box.wide { max-width: 760px; }
+.box h2 { font-size: 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.box .row { justify-content: flex-end; margin-top: 14px; }
+#toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #2a3a32; border: 1px solid var(--grass); border-radius: 8px; padding: 9px 16px; display: none; z-index: 20; max-width: 90vw; }
+.kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.kpi div { background: var(--panel2); border-radius: 8px; padding: 10px; }
+.kpi small { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.kpi b { font-size: 18px; }
+.news div { padding: 7px 0; border-bottom: 1px solid #1c2a23; }
+.news small { color: var(--muted); margin-right: 8px; }
+
+@media (max-width: 980px) {
+  .cols, .cols2 { grid-template-columns: minmax(0, 1fr); }
+  .pickgrid { grid-template-columns: repeat(2, 1fr); }
+  .top .stat { margin-left: 0; text-align: left; }
+}
+@media (max-width: 520px) { .pickgrid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal" onclick="if(event.target===this)closeModal()"></div>
+<div id="toast"></div>
+<script>
+'use strict';
+// Dados fictícios: clubes, nomes e formações.
+
+const PAL = { r: '#d62828', k: '#15171a', w: '#f3f4f6', b: '#1d4ed8', g: '#15803d', y: '#facc15', o: '#ea580c', p: '#6d28d9', n: '#0b1f4b', m: '#7f1d1d', c: '#38bdf8', s: '#9ca3af' };
+const LIGHT = 'wycs';
+
+const DIVS = ['Série A', 'Série B', 'Série C', 'Série D'];
+
+// nome|UF|cores — a ordem define a força inicial (os 20 primeiros formam a Série A)
+const CLUBS = [
+  'Real Guanabara|RJ|rk', 'Atlético Bandeirante|SP|wk', 'Imperial Porto Sul|RS|rw', 'Estrela Mineira|MG|bw',
+  'Tricolor da Serra|RS|ck', 'Leão do Capibaribe|PE|ry', 'Baía Azul EC|BA|br', 'Fênix Carioca|RJ|mg',
+  'Operário Paulista|SP|gw', 'Vila Imperial|SP|ws', 'Alvorada FC|DF|yg', 'Minas Unidos|MG|kw',
+  'Atlético Pantanal|MT|gy', 'Jangada EC|CE|nw', 'Araucária FC|PR|gk', 'Maré Alta FC|SP|wc',
+  'Lagoa SC|SC|bk', 'Guará Goiano|GO|gw', 'Locomotiva FC|SP|ok', 'Coroa Carioca|RJ|ny',
+
+  'Sertão FC|PE|ry', 'Encontro das Águas|AM|kw', 'Farol da Barra EC|BA|rb', 'Cerrado EC|GO|gy',
+  'Portuários do Litoral|SP|nw', 'Vale do Aço FC|MG|sk', 'Pampa Gaúcho|RS|gr', 'Ilha Bela AC|SC|cw',
+  'Planalto Central|DF|bw', 'Mangue Seco EC|SE|rw', 'Dunas FC|RN|yk', 'Velho Chico AC|AL|bc',
+  'Tropeiros|PR|mw', 'Canavial EC|SP|gk', 'Nova Aurora|PA|by', 'Ouro Fino EC|MG|yk',
+  'Garimpeiros FC|MT|yg', 'Pioneiros do Oeste|PR|rb', 'Boto Rosa FC|AM|pw', 'Recôncavo SC|BA|ok',
+
+  'Açaí FC|PA|pw', 'Carnaúba EC|CE|gy', 'Tamandaré AC|PE|bw', 'Cafezal FC|SP|mk',
+  'União Ribeirinha|AM|gw', 'Mata Atlântica SC|ES|gk', 'Vitória-Régia FC|AC|gp', 'Sol Nascente|PB|yr',
+  'Estrela do Agreste|PE|rw', 'Boiadeiros|MS|ok', 'Petroleiros FC|RJ|ky', 'Ipê Amarelo EC|TO|yg',
+  'Quilombo FC|AL|kr', 'Tecelões|SC|bw', 'Cachoeira Grande|MG|cw', 'Monte Verde AC|RO|gw',
+  'Chapada FC|MT|or', 'Salinas EC|RN|wb', 'Metalúrgicos|SP|sr', 'Fronteira FC|RS|rk',
+
+  'Babaçu FC|MA|gy', 'Lavradores|RR|rw', 'Mandacaru EC|PI|gw', 'Seringal AC|AC|yg',
+  'Marajó FC|PA|rb', 'Canoeiros|TO|bw', 'Buriti EC|MA|go', 'Pedra Azul|ES|cn',
+  'Ferradura FC|MS|kr', 'Ventania EC|PR|wb', 'Bandeira Branca|SP|wr', 'Colina Verde|RJ|gw',
+  'Guaraná AC|AM|rg', 'Macaúba FC|MG|yk', 'Oeste Bravo|SC|rk', 'Barranco FC|AP|ok',
+  'Jacarandá EC|GO|py', 'Caatinga FC|BA|oy', 'Garças do Sul|RS|wc', 'Catavento FC|CE|by'
+];
+
+// clubes estrangeiros da Taça das Américas: nome|país|cores|força
+const FOREIGN = [
+  'Atlético Rioplatense|ARG|cw|82', 'Porteños FC|ARG|by|80', 'Oriental de Montevideo|URU|kw|78', 'Cordillera SC|CHI|rb|77',
+  'Cafeteros FC|COL|gy|76', 'Asunción Unido|PAR|rw|74', 'Mitad del Mundo SC|EQU|yb|74', 'Inca Real|PER|rw|72',
+  'Altiplano FC|BOL|gw|70', 'Llaneros de Oro|VEN|mk|69'
+];
+const FN_ES = ['Agustín', 'Alejandro', 'Ángel', 'Carlos', 'Cristian', 'Diego', 'Emiliano', 'Esteban', 'Facundo', 'Federico', 'Franco', 'Gonzalo',
+  'Hernán', 'Ignacio', 'Javier', 'Joaquín', 'Jorge', 'Juan', 'Julián', 'Lautaro', 'Leandro', 'Luis', 'Marcos', 'Martín', 'Matías', 'Maxi', 'Nicolás',
+  'Pablo', 'Ramiro', 'Rodrigo', 'Santiago', 'Sebastián', 'Tomás', 'Valentín', 'Víctor'];
+const SN_ES = ['Acosta', 'Aguirre', 'Álvarez', 'Benítez', 'Cabrera', 'Castillo', 'Córdoba', 'Díaz', 'Domínguez', 'Fernández', 'Flores', 'García',
+  'Giménez', 'Gómez', 'González', 'Herrera', 'López', 'Martínez', 'Medina', 'Mendoza', 'Molina', 'Morales', 'Núñez', 'Ortiz', 'Paredes', 'Peralta',
+  'Pérez', 'Quintero', 'Ramírez', 'Ríos', 'Rodríguez', 'Rojas', 'Romero', 'Sánchez', 'Sosa', 'Suárez', 'Torres', 'Valdez', 'Vargas', 'Vera'];
+
+const FN = ['André', 'Bruno', 'Caio', 'Carlos', 'César', 'Daniel', 'Diego', 'Douglas', 'Eduardo', 'Elias', 'Everton', 'Fábio', 'Felipe',
+  'Fernando', 'Gabriel', 'Gilberto', 'Guilherme', 'Gustavo', 'Henrique', 'Hugo', 'Igor', 'Ítalo', 'Jean', 'João', 'Jonas', 'Jorge', 'Júlio',
+  'Leandro', 'Léo', 'Lucas', 'Luan', 'Luís', 'Marcelo', 'Márcio', 'Mateus', 'Maurício', 'Murilo', 'Nathan', 'Otávio', 'Pablo', 'Paulo',
+  'Pedro', 'Rafael', 'Ramon', 'Renan', 'Ricardo', 'Rodrigo', 'Rômulo', 'Samuel', 'Sandro', 'Thiago', 'Tiago', 'Vinícius', 'Vítor', 'Wagner',
+  'Wellington', 'Wesley', 'William', 'Yago', 'Yuri'];
+const SN = ['Almeida', 'Alves', 'Andrade', 'Araújo', 'Barbosa', 'Barros', 'Batista', 'Borges', 'Campos', 'Cardoso', 'Carvalho', 'Castro',
+  'Cavalcante', 'Correia', 'Costa', 'Cunha', 'Dias', 'Duarte', 'Farias', 'Ferreira', 'Freitas', 'Gomes', 'Lima', 'Lopes', 'Macedo', 'Machado',
+  'Martins', 'Medeiros', 'Melo', 'Mendes', 'Monteiro', 'Moraes', 'Moreira', 'Moura', 'Nascimento', 'Neves', 'Nogueira', 'Nunes', 'Oliveira',
+  'Pacheco', 'Paiva', 'Pereira', 'Pinto', 'Ramos', 'Reis', 'Rezende', 'Ribeiro', 'Rocha', 'Sales', 'Santana', 'Santos', 'Silva', 'Siqueira',
+  'Soares', 'Souza', 'Teixeira', 'Vasconcelos', 'Vieira', 'Xavier'];
+const NICK = ['Dudu', 'Marquinhos', 'Juninho', 'Paulinho', 'Rafinha', 'Zezinho', 'Tico', 'Neto', 'Bolinha', 'Canhoto', 'Pitbull', 'Tatu',
+  'Ceará', 'Baiano', 'Gaúcho', 'Mineiro', 'Carioca', 'Paraíba', 'Pernambuco', 'Goiano', 'Capixaba', 'Maranhão', 'Chiquinho', 'Betinho',
+  'Fabinho', 'Luizinho', 'Robinho', 'Serginho', 'Thiaguinho', 'Vitinho', 'Zé Carlos', 'Zé Roberto', 'Kaká Lima', 'Pedrão', 'Marcão',
+  'Fernandão', 'Jorginho', 'Biro', 'Careca', 'Magrão', 'Xodó', 'Tuta', 'Nenê', 'Didi', 'Lelê', 'Jajá', 'Cacá', 'Dedé', 'Tetê', 'Pipoca',
+  'Sorriso', 'Foguinho', 'Relâmpago', 'Tanque', 'Maestro', 'Formiga', 'Gigante', 'Baixinho'];
+
+const POSN = { G: 'GOL', LD: 'LD', Z: 'ZAG', LE: 'LE', V: 'VOL', M: 'MEI', A: 'ATA' };
+const POS_ORDER = { G: 0, LD: 1, Z: 2, LE: 3, V: 4, M: 5, A: 6 };
+const SQUAD = ['G', 'G', 'G', 'Z', 'Z', 'Z', 'Z', 'LD', 'LD', 'LE', 'LE', 'V', 'V', 'V', 'M', 'M', 'M', 'M', 'A', 'A', 'A', 'A'];
+
+// características inatas úteis em cada função
+const TRAITS = {
+  G: ['Colocação', 'Reflexo', 'Saída do gol', 'Pênalti'],
+  Z: ['Desarme', 'Marcação', 'Cabeceio'],
+  LD: ['Cruzamento', 'Velocidade', 'Marcação'],
+  LE: ['Cruzamento', 'Velocidade', 'Marcação'],
+  V: ['Desarme', 'Marcação', 'Passe'],
+  M: ['Armação', 'Passe', 'Drible'],
+  A: ['Finalização', 'Cabeceio', 'Drible', 'Velocidade']
+};
+const ALLTR = ['Armação', 'Cabeceio', 'Cruzamento', 'Desarme', 'Drible', 'Finalização', 'Marcação', 'Passe', 'Resistência', 'Velocidade'];
+
+// [função, x%, y%] — o time ataca para cima
+const BACK4 = [['LE', 12, 71], ['Z', 37, 76], ['Z', 63, 76], ['LD', 88, 71]];
+const FORMS = {
+  '4-4-2': [['G', 50, 91], ...BACK4, ['V', 37, 55], ['V', 63, 55], ['M', 26, 37], ['M', 74, 37], ['A', 37, 16], ['A', 63, 16]],
+  '4-3-3': [['G', 50, 91], ...BACK4, ['V', 50, 57], ['M', 30, 41], ['M', 70, 41], ['A', 18, 20], ['A', 50, 14], ['A', 82, 20]],
+  '4-5-1': [['G', 50, 91], ...BACK4, ['V', 37, 57], ['V', 63, 57], ['M', 20, 37], ['M', 50, 34], ['M', 80, 37], ['A', 50, 14]],
+  '3-5-2': [['G', 50, 91], ['Z', 26, 75], ['Z', 50, 78], ['Z', 74, 75], ['LE', 9, 52], ['V', 50, 58], ['LD', 91, 52], ['M', 32, 38], ['M', 68, 38], ['A', 37, 16], ['A', 63, 16]],
+  '5-4-1': [['G', 50, 91], ['LE', 9, 67], ['Z', 29, 75], ['Z', 50, 78], ['Z', 71, 75], ['LD', 91, 67], ['V', 37, 54], ['V', 63, 54], ['M', 30, 36], ['M', 70, 36], ['A', 50, 14]],
+  '3-4-3': [['G', 50, 91], ['Z', 26, 75], ['Z', 50, 78], ['Z', 74, 75], ['LE', 9, 50], ['V', 38, 55], ['M', 62, 48], ['LD', 91, 50], ['A', 18, 20], ['A', 50, 14], ['A', 82, 20]]
+};
+
+// Os clubes estão espalhados por 27 estados, então os "estaduais" são disputados por região.
+const REGS = [
+  { n: 'Campeonato Paulista', ufs: ['SP'] },
+  { n: 'Campeonato do Sudeste', ufs: ['RJ', 'MG', 'ES'] },
+  { n: 'Campeonato do Sul', ufs: ['RS', 'SC', 'PR'] },
+  { n: 'Campeonato do Nordeste', ufs: ['BA', 'PE', 'CE', 'RN', 'PB', 'AL', 'SE', 'MA', 'PI'] },
+  { n: 'Campeonato do Norte', ufs: ['AM', 'PA', 'AC', 'RO', 'RR', 'AP', 'TO'] },
+  { n: 'Campeonato do Centro-Oeste', ufs: ['DF', 'GO', 'MT', 'MS'] }
+];
+const REG_ROUNDS = 6;
+
+const CUP = [
+  { n: '1ª fase', legs: 1, prize: 150e3 }, { n: '2ª fase', legs: 1, prize: 400e3 }, { n: '3ª fase', legs: 1, prize: 900e3 },
+  { n: 'Oitavas de final', legs: 2, prize: 2e6 }, { n: 'Quartas de final', legs: 2, prize: 4e6 },
+  { n: 'Semifinal', legs: 2, prize: 8e6 }, { n: 'Final', legs: 2, prize: 2e7 }
+];
+// data da copa -> [fase, jogo]
+const CUPD = [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [4, 0], [4, 1], [5, 0], [5, 1], [6, 0], [6, 1]];
+// rodadas da liga já disputadas -> data da copa que vem em seguida
+const CUP_AFTER = { 3: 0, 6: 1, 9: 2, 13: 3, 15: 4, 19: 5, 21: 6, 26: 7, 28: 8, 33: 9, 35: 10 };
+
+// Taça das Américas: rodadas da liga já disputadas -> data da competição (0-5 grupos, 6-7 quartas, 8-9 semis, 10 final)
+const AM_AFTER = { 1: 0, 5: 1, 8: 2, 11: 3, 16: 4, 18: 5, 23: 6, 24: 7, 30: 8, 31: 9, 37: 10 };
+const AM_NAME = 'Taça das Américas';
+const AM_PRIZE = { start: 3e6, qf: 4e6, sf: 6e6, fin: 8e6, champ: 25e6 };
+
+// g: evolução, e: recuperação de energia por data, m: rendimento em campo, inj: risco de lesão
+const TRAIN = [
+  { n: 'Equilibrado', g: 1, e: 0, m: 1, inj: 1, d: 'Sem bônus nem custos.' },
+  { n: 'Técnico', g: 1.4, e: -4, m: 1, inj: 1.1, d: 'Jogadores evoluem mais rápido, mas recuperam menos energia e se lesionam um pouco mais.' },
+  { n: 'Físico', g: 0.7, e: 5, m: 1, inj: 0.7, d: 'Recuperação de energia mais rápida e menos lesões; evolução mais lenta.' },
+  { n: 'Tático', g: 0.85, e: 0, m: 1.03, inj: 1, d: 'Time mais entrosado rende 3% a mais em campo; evolução um pouco mais lenta.' }
+];
+
+const STYLE = [
+  { n: 'Equilibrado', a: 1, d: 1, m: 1 },
+  { n: 'Ataque total', a: 1.2, d: 0.82, m: 1.03 },
+  { n: 'Retranca / contra-ataque', a: 0.86, d: 1.18, m: 0.94 }
+];
+const MARK = [
+  { n: 'Leve', d: 0.96, y: 0.012, r: 0.0002 },
+  { n: 'Pesada', d: 1.03, y: 0.02, r: 0.0005 },
+  { n: 'Muito pesada', d: 1.09, y: 0.032, r: 0.0012 }
+];
+</script>
+<script>
+'use strict';
+// Regras do jogo: geração do mundo, calendário, partida, finanças, transferências, contratos, base e virada de temporada.
+
+let G = null;      // estado salvo
+let PM = null;     // cache id -> jogador
+const SAVE = 'prancheta_save_v2';
+const ROUNDS = 38;
+const TICKET = [40, 25, 15, 10, 40];   // o último é dos clubes estrangeiros (div 4)
+const PRIZE = [2e7, 5e6, 1.5e6, 5e5];
+const DIV_TARGET = [78, 67, 57, 46, 76];
+const MAX_SQUAD = 30, MIN_SQUAD = 16, MAX_YOUTH = 18;
+
+const R = Math.random;
+const ri = (a, b) => a + Math.floor(R() * (b - a + 1));
+const pick = a => a[Math.floor(R() * a.length)];
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const gauss = () => (R() + R() + R() + R() - 2) / 0.577;
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = ri(0, i); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function wpick(arr, wf) {
+  let tot = 0; const ws = arr.map(x => { const w = wf(x); tot += w; return w; });
+  if (tot <= 0) return null;
+  let r = R() * tot;
+  for (let i = 0; i < arr.length; i++) { r -= ws[i]; if (r <= 0) return arr[i]; }
+  return arr[arr.length - 1];
+}
+function nice(x) {
+  if (x < 1000) return Math.round(x / 50) * 50;
+  const m = Math.pow(10, Math.floor(Math.log10(x)) - 1);
+  return Math.round(x / m) * m;
+}
+function $$(v) {
+  const s = v < 0 ? '-' : ''; v = Math.abs(v);
+  if (v >= 1e6) return s + 'R$ ' + (v / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' mi';
+  if (v >= 1e3) return s + 'R$ ' + Math.round(v / 1e3) + ' mil';
+  return s + 'R$ ' + Math.round(v);
+}
+
+const T = id => G.teams[id];
+function P(id) {
+  if (!PM) {
+    PM = new Map();
+    G.teams.forEach(t => t.players.forEach(p => PM.set(p.id, p)));
+    G.free.forEach(p => PM.set(p.id, p));
+  }
+  return PM.get(id);
+}
+const teamOf = pid => G.teams.find(t => t.players.some(p => p.id === pid));
+const ok = p => !!p && !p.inj && !p.sus;
+function top11(t) {
+  const a = t.players.map(p => p.f).sort((x, y) => y - x).slice(0, 11);
+  return a.reduce((s, x) => s + x, 0) / (a.length || 1);
+}
+const regOf = t => REGS.findIndex(r => r.ufs.includes(t.uf));
+
+// Cada técnico humano tem um perfil, guardado pelo id do clube que ele dirige. G.me é o clube de quem está olhando a tela.
+const newFin = () => ({ spon: 0, tick: 0, sal: 0, tin: 0, tout: 0, obras: 0, prem: 0 });
+const PR = id => G.prof[id];
+const MY = () => G.prof[G.me];
+const isH = t => !!G.prof[t.id];
+const humans = () => Object.keys(G.prof).map(k => T(+k));
+// executa uma ação como se fosse o técnico do clube id (o servidor da sala usa isso para atender os convidados)
+function as(id, f) { const cur = G.me; G.me = id; try { return f(); } finally { G.me = cur; } }
+
+/* ---------- jogadores ---------- */
+
+function rawValue(f, age) {
+  const af = age <= 21 ? 1.3 : age <= 25 ? 1.15 : age <= 29 ? 1 : age <= 31 ? 0.75 : age <= 33 ? 0.5 : 0.25;
+  return 6e7 * Math.pow(f / 100, 5.5) * af;
+}
+const value = p => Math.max(5000, nice(rawValue(p.f, p.age)));
+const salOf = p => Math.max(500, nice(rawValue(p.f, p.age) * 0.0035));
+
+function mkName(es) {
+  if (es) return R() < 0.2 ? pick(FN_ES) : pick(FN_ES) + ' ' + pick(SN_ES);
+  const r = R();
+  if (r < 0.3) return pick(NICK);
+  if (r < 0.5) return pick(FN);
+  return pick(FN) + ' ' + pick(SN);
+}
+function mkTraits(pos) {
+  const tr = [], n = R() < 0.8 ? 2 : 1;
+  while (tr.length < n) {
+    const c = (pos === 'G' || R() < 0.7) ? pick(TRAITS[pos]) : pick(ALLTR);
+    if (!tr.includes(c)) tr.push(c);
+  }
+  return tr;
+}
+function mkPlayer(pos, f, age, pot, es) {
+  f = clamp(Math.round(f), 1, 99);
+  const p = {
+    id: G.nid++, n: mkName(es), pos, age, f, pot: clamp(Math.round(pot == null ? f : pot), f, 99), tr: mkTraits(pos),
+    en: 100, mo: 60, g: 0, go: 0, gp: 0, yc: 0, inj: 0, sus: 0, sale: 0, lend: 0, d: 0, ce: G.season + ri(0, 2)
+  };
+  p.sal = salOf(p);
+  return p;
+}
+function youth(t, pos) {
+  return mkPlayer(pos, t.rep - 14 + gauss() * 4, ri(17, 19), t.rep + ri(-6, 7), t.es);
+}
+
+/* ---------- mundo e calendário ---------- */
+
+const demand = rep => 60000 * Math.pow(rep / 85, 3.5);
+const sponsorOf = t => Math.round(22 * rawValue(t.rep, 26) * 0.0035 * 0.66 / 1000) * 1000;
+
+function mkTeam(s, i) {
+  const [name, uf, col, frep] = s.split('|'), ext = frep != null;
+  const rep = (ext ? +frep : 84 - i * 0.55) + (R() * 3 - 1.5);
+  const t = {
+    id: i, name, uf, c1: col[0], c2: col[1], pat: i % 5, div: ext ? 4 : Math.floor(i / 20), rep, es: ext,
+    std: '', cap: 0, ticket: 0, cash: 0, spon: 0, att: 0,
+    form: pick(['4-4-2', '4-4-2', '4-3-3', '4-3-3', '4-5-1', '3-5-2', '5-4-1', '3-4-3']),
+    xi: [], bench: [], style: 0, mark: R() < 0.55 ? 0 : R() < 0.85 ? 1 : 2, train: 0, players: [],
+    coach: { n: pick(FN) + ' ' + pick(SN), pts: 0 }
+  };
+  t.std = R() < 0.3 ? 'Arena ' + name.replace(/ (FC|EC|AC|SC)$/, '') : (ext ? 'Estadio ' + pick(FN_ES) + ' ' + pick(SN_ES) : 'Estádio ' + pick(FN) + ' ' + pick(SN));
+  t.cap = Math.max(2000, Math.round(demand(rep) * (0.85 + R() * 0.45) / 500) * 500);
+  t.ticket = TICKET[t.div];
+  SQUAD.forEach((pos, j) => {
+    const age = ri(18, 34);
+    let f = rep + gauss() * 4.5 - (j === 2 ? 7 : 0), pot;
+    if (age < 22) { f -= (22 - age) * 2.2; pot = rep + ri(0, 10); }
+    else pot = f + (age < 27 ? ri(0, 4) : 0);
+    t.players.push(mkPlayer(pos, f, age, pot, ext));
+  });
+  t.spon = sponsorOf(t);
+  t.cash = t.spon * 10;
+  return t;
+}
+
+function newWorld() {
+  G = {
+    v: 2, season: 2026, day: 0, round: 0, nid: 1, me: null, prof: {}, teams: [], fix: [], cal: [], reg: [], cup: null,
+    free: [], hist: [], over: false
+  };
+  PM = null;
+  CLUBS.concat(FOREIGN).forEach((s, i) => G.teams.push(mkTeam(s, i)));
+  startSeason();
+}
+
+function addHuman(id, coach) {
+  const t = T(id);
+  const pr = G.prof[id] = { coach, youth: [], offers: [], news: [], unread: 0, fin: newFin(), conf: 60, goal: mkGoal(t), cpts: 0, jobs: [], fired: false, titles: [], lastPrize: 0, hist: [], ready: false, on: true };
+  t.players.forEach(p => { p.sale = p.lend = 0; if (!p.loan) p.ce = G.season + ri(0, 2); });
+  t.train = 0; t.style = 0; t.ticket = TICKET[t.div];
+  as(id, () => intake(12));
+  autoPick(t);
+  news(id, `${coach} é o novo técnico do ${t.name} (${DIVS[t.div]}). Objetivo da diretoria na liga: ${pr.goal.txt}.`);
+  PM = null;
+}
+
+const mkFx = (h, a, c, ko) => ({ h, a, gh: null, ga: null, c, ko: !!ko });
+
+function mkFixtures(ids, c = 'L') {
+  const n = ids.length, a = shuffle(ids.slice()), rounds = [];
+  for (let r = 0; r < n - 1; r++) {
+    const rd = [];
+    for (let i = 0; i < n / 2; i++) {
+      let h = a[i], w = a[n - 1 - i];
+      if (i === 0 ? r % 2 : i % 2) [h, w] = [w, h];
+      rd.push(mkFx(h, w, c));
+    }
+    rounds.push(rd);
+    a.splice(1, 0, a.pop());
+  }
+  return rounds.concat(rounds.map(rd => rd.map(m => mkFx(m.a, m.h, c))));
+}
+
+function mkCal() {
+  const c = [];
+  if (G.scq) c.push({ t: 'S', i: 0 });
+  for (let i = 0; i < REG_ROUNDS + 2; i++) c.push({ t: 'E', i });
+  for (let r = 0; r < ROUNDS; r++) {
+    c.push({ t: 'L', i: r });
+    if (CUP_AFTER[r + 1] != null) c.push({ t: 'C', i: CUP_AFTER[r + 1] });
+    if (AM_AFTER[r + 1] != null) c.push({ t: 'A', i: AM_AFTER[r + 1] });
+  }
+  return c;
+}
+
+function tableOf(ids, rounds) {
+  const rows = new Map();
+  ids.forEach(id => rows.set(id, { t: T(id), pts: 0, j: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0 }));
+  rounds.forEach(rd => rd.forEach(m => {
+    if (m.gh == null) return;
+    const h = rows.get(m.h), a = rows.get(m.a);
+    h.j++; a.j++; h.gp += m.gh; h.gc += m.ga; a.gp += m.ga; a.gc += m.gh;
+    if (m.gh > m.ga) { h.v++; a.d++; h.pts += 3; } else if (m.gh < m.ga) { a.v++; h.d++; a.pts += 3; } else { h.e++; a.e++; h.pts++; a.pts++; }
+  }));
+  return [...rows.values()].sort((x, y) => y.pts - x.pts || y.v - x.v || (y.gp - y.gc) - (x.gp - x.gc) || y.gp - x.gp || x.t.name.localeCompare(y.t.name));
+}
+const table = div => tableOf(G.teams.filter(t => t.div === div).map(t => t.id), G.fix[div]);
+const regTable = k => tableOf(G.reg[k].ids, G.reg[k].rounds);
+const posOf = t => table(t.div).findIndex(r => r.t.id === t.id) + 1;
+
+// fase de liga dos regionais: cada rodada cruza times de campanha parecida que ainda não se enfrentaram
+function swiss(reg) {
+  const order = tableOf(reg.ids, reg.rounds).map(r => r.t.id);
+  if (!reg.rounds.length) shuffle(order);
+  const played = new Set(), homes = {}, games = {};
+  reg.rounds.forEach(rd => rd.forEach(f => {
+    played.add(f.h + '-' + f.a); played.add(f.a + '-' + f.h);
+    homes[f.h] = (homes[f.h] || 0) + 1; games[f.h] = (games[f.h] || 0) + 1; games[f.a] = (games[f.a] || 0) + 1;
+  }));
+  if (order.length % 2) { // folga para o pior colocado que ainda não folgou
+    let k = order.length - 1;
+    while (k > 0 && (games[order[k]] || 0) < reg.rounds.length) k--;
+    order.splice(k, 1);
+  }
+  const out = [];
+  while (order.length > 1) {
+    const a = order.shift();
+    let j = order.findIndex(b => !played.has(a + '-' + b));
+    if (j < 0) j = 0;
+    const b = order.splice(j, 1)[0], ha = homes[a] || 0, hb = homes[b] || 0;
+    const aHome = ha < hb || (ha === hb && R() < 0.5);
+    out.push(mkFx(aHome ? a : b, aHome ? b : a, 'E'));
+  }
+  return out;
+}
+
+function mkTies(ids, ph) {
+  const ties = [];
+  for (let i = 0; i + 1 < ids.length; i += 2) {
+    const a = ids[i], b = ids[i + 1];
+    ties.push({ legs: CUP[ph].legs === 1 ? [mkFx(a, b, 'C', true)] : [mkFx(a, b, 'C', false), mkFx(b, a, 'C', true)], w: null });
+  }
+  return ties;
+}
+
+function startSeason(carry) {
+  G.day = 0; G.round = 0; G.over = false; G.cal = mkCal(); G.mkt = [];
+  G.sc = G.scq ? { fx: mkFx(G.scq[0], G.scq[1], 'S', true), champ: null } : null;
+  G.fix = [0, 1, 2, 3].map(d => mkFixtures(G.teams.filter(t => t.div === d).map(t => t.id)));
+  humans().forEach(t => { const pr = PR(t.id); pr.fin = newFin(); pr.offers = []; pr.jobs = []; pr.ready = false; delete pr.nextJob; });
+  G.free = carry || [];
+  for (let i = 0; i < 26; i++) G.free.push(mkPlayer(pick(SQUAD), ri(34, 72), ri(20, 34)));
+  G.teams.forEach(t => {
+    t.spon = sponsorOf(t);
+    t.ticket = isH(t) ? t.ticket : TICKET[t.div];
+    t.players.forEach(p => { p.g = p.go = p.gp = p.yc = p.sus = p.inj = 0; p.rs = p.rn = 0; p.en = 100; p.d = 0; p.sale = 0; p.lend = 0; });
+    if (!isH(t)) {
+      const rest = t.players.slice().sort((a, b) => b.f - a.f).slice(11).filter(p => p.pos !== 'G');
+      for (let k = 0; k < 3 && rest.length; k++) rest.splice(ri(0, rest.length - 1), 1)[0].sale = 1;
+    }
+  });
+  G.reg = REGS.map(r => {
+    const reg = { ids: G.teams.filter(t => r.ufs.includes(t.uf)).map(t => t.id), rounds: [], ko: [], champ: null };
+    reg.rounds.push(swiss(reg));
+    return reg;
+  });
+  // Copa: os 32 clubes de pior ranking jogam a 1ª fase; os outros 48 entram na 2ª
+  const ord = G.teams.filter(t => t.div < 4).sort((a, b) => b.div - a.div || a.rep - b.rep).map(t => t.id);
+  G.cup = { ph: [mkTies(shuffle(ord.slice(0, 32)), 0)], bye: ord.slice(32), champ: null };
+  if (!G.amq) G.amq = G.teams.filter(t => t.div === 0).sort((a, b) => b.rep - a.rep).slice(0, 6).map(t => t.id);
+  G.am = mkAm();
+  G.am.ids.forEach(id => pay(T(id), AM_PRIZE.start));
+  humans().forEach(t => { PR(t.id).goal = mkGoal(t); });
+  PM = null;
+}
+
+// Taça das Américas: 6 brasileiros classificados + 10 estrangeiros em 4 grupos de 4
+function mkAm() {
+  const br = shuffle(G.amq.slice()), ex = shuffle(G.teams.filter(t => t.div === 4).map(t => t.id)), gs = [[], [], [], []];
+  br.forEach((id, i) => gs[i % 4].push(id));
+  gs.forEach(g => { while (g.length < 4) g.push(ex.pop()); });
+  return { ids: gs.flat(), groups: gs.map(ids => ({ ids, rounds: mkFixtures(ids, 'A') })), ko: [], champ: null };
+}
+const amTie = (a, b) => ({ legs: [mkFx(a, b, 'A', false), mkFx(b, a, 'A', true)], w: null }); // a volta é na casa de b
+const amTable = g => tableOf(g.ids, g.rounds);
+const amStage = i => i < 6 ? 'rodada ' + (i + 1) : i < 8 ? 'quartas de final ' + (i === 6 ? '(ida)' : '(volta)') : i < 10 ? 'semifinal ' + (i === 8 ? '(ida)' : '(volta)') : 'final';
+
+// o que a diretoria espera da liga, de acordo com a força do elenco dentro da divisão
+function mkGoal(t) {
+  const rank = G.teams.filter(x => x.div === t.div).sort((a, b) => top11(b) - top11(a)).indexOf(t), d = t.div;
+  if (rank < 6) return { pos: 4, txt: d === 0 ? 'terminar entre os 4 primeiros' : 'conquistar o acesso (terminar entre os 4 primeiros)' };
+  if (rank < 14) { const pos = rank < 10 ? 10 : 12; return { pos, txt: `terminar até o ${pos}º lugar` }; }
+  return { pos: 16, txt: d < 3 ? 'escapar do rebaixamento (terminar até o 16º lugar)' : 'terminar até o 16º lugar' };
+}
+function cp(t, n) { if (isH(t)) PR(t.id).cpts += n; else t.coach.pts += n; }
+
+function dayGroups(di) {
+  const d = G.cal[di];
+  if (!d) return [];
+  if (d.t === 'L') return [0, 1, 2, 3].map(v => ({ title: DIVS[v], fxs: G.fix[v][d.i] }));
+  if (d.t === 'E') return G.reg.map((r, k) => ({
+    title: REGS[k].n + ' · ' + (d.i < REG_ROUNDS ? 'rodada ' + (d.i + 1) : d.i === REG_ROUNDS ? 'semifinal' : 'final'),
+    fxs: (d.i < REG_ROUNDS ? r.rounds[d.i] : r.ko[d.i - REG_ROUNDS]) || []
+  }));
+  if (d.t === 'S') return [{ title: 'Supercopa do Brasil', fxs: G.sc ? [G.sc.fx] : [] }];
+  if (d.t === 'A') {
+    if (!G.am) return [];
+    if (d.i < 6) return G.am.groups.map((g, k) => ({ title: `${AM_NAME} · Grupo ${'ABCD'[k]} · ${amStage(d.i)}`, fxs: g.rounds[d.i] }));
+    const ties = G.am.ko[d.i < 8 ? 0 : d.i < 10 ? 1 : 2] || [];
+    return [{ title: `${AM_NAME} · ${amStage(d.i)}`, fxs: ties.map(t => t.legs[d.i === 7 || d.i === 9 ? 1 : 0]) }];
+  }
+  const [ph, leg] = CUPD[d.i];
+  return [{ title: 'Copa do Brasil · ' + CUP[ph].n + (CUP[ph].legs === 2 ? (leg ? ' (volta)' : ' (ida)') : ''), fxs: (G.cup.ph[ph] || []).map(t => t.legs[leg]) }];
+}
+function dayName(di) {
+  const d = G.cal[Math.min(di, G.cal.length - 1)];
+  if (d.t === 'L') return 'Rodada ' + (d.i + 1);
+  if (d.t === 'E') return 'Regional · ' + (d.i < REG_ROUNDS ? 'rodada ' + (d.i + 1) : d.i === REG_ROUNDS ? 'semifinal' : 'final');
+  if (d.t === 'S') return 'Supercopa do Brasil';
+  if (d.t === 'A') return 'Américas · ' + amStage(d.i);
+  const [ph, leg] = CUPD[d.i];
+  return 'Copa · ' + CUP[ph].n + (CUP[ph].legs === 2 ? (leg ? ' (volta)' : ' (ida)') : '');
+}
+function myFx(di, id = G.me) {
+  for (const g of dayGroups(di)) {
+    const fx = g.fxs.find(f => f.h === id || f.a === id);
+    if (fx) return { fx, g };
+  }
+  return null;
+}
+const scoreStr = fx => fx.gh == null ? 'x' : fx.gh + ' x ' + fx.ga + (fx.pen ? ` (${fx.pen[0]}-${fx.pen[1]} pên.)` : '');
+
+/* ---------- escalação ---------- */
+
+const PF = { LDLE: 0.93, VZ: 0.82, MV: 0.82, AM: 0.82, LDZ: 0.8, LEZ: 0.8, LDV: 0.75, LEV: 0.75, LDM: 0.75, LEM: 0.75 };
+function posFac(p, r) {
+  if (p === r) return 1;
+  if (p === 'G' || r === 'G') return 0.3;
+  return PF[[p, r].sort().join('')] || 0.62;
+}
+function eff(p, role) {
+  const useful = p.tr.filter(x => TRAITS[role].includes(x)).length;
+  return p.f * posFac(p.pos, role) * (0.55 + 0.45 * p.en / 100) * (0.92 + 0.16 * p.mo / 100) * (1 + 0.03 * useful);
+}
+
+function autoPick(t) {
+  const slots = FORMS[t.form], av = t.players.filter(ok), pairs = [];
+  slots.forEach((s, i) => av.forEach(p => pairs.push([eff(p, s[0]), i, p])));
+  pairs.sort((a, b) => b[0] - a[0]);
+  const xi = Array(11).fill(null), used = new Set();
+  for (const [, i, p] of pairs) {
+    if (xi[i] != null || used.has(p.id)) continue;
+    xi[i] = p.id; used.add(p.id);
+  }
+  const rest = av.filter(p => !used.has(p.id)).sort((a, b) => b.f - a.f);
+  const gk = rest.find(p => p.pos === 'G');
+  const bench = (gk ? [gk] : []).concat(rest.filter(p => p !== gk && p.pos !== 'G').slice(0, gk ? 6 : 7));
+  t.xi = xi; t.bench = bench.map(p => p.id);
+}
+function cleanLineup(t) {
+  const ids = new Set(t.players.map(p => p.id));
+  t.xi = FORMS[t.form].map((_, i) => ids.has(t.xi[i]) ? t.xi[i] : null);
+  t.bench = t.bench.filter(id => ids.has(id) && !t.xi.includes(id));
+}
+const validXI = t => t.xi.length === 11 && t.xi.every(id => ok(P(id)));
+
+/* ---------- partida ---------- */
+
+const W = { G: [0, 0, 0], Z: [1, 0, 0], LD: [0.7, 0.2, 0.2], LE: [0.7, 0.2, 0.2], V: [0.5, 0.7, 0], M: [0.1, 0.8, 0.5], A: [0, 0.1, 1] }; // defesa, meio, ataque
+const SHW = { G: 0, Z: 0.6, LD: 0.7, LE: 0.7, V: 1, M: 2.5, A: 4 };
+const styleOf = X => X.human ? X.t.style : X.style;
+
+function mkSide(t) {
+  const human = isH(t);
+  if (!human) autoPick(t);
+  const on = [];
+  t.xi.forEach((id, i) => { const p = P(id); if (p) on.push({ p, role: FORMS[t.form][i][0], st: 'on' }); });
+  return { t, human, on, bench: t.bench.map(P).filter(ok), subs: 0, g: 0, sh: 0, sot: 0, pos: 0, style: 0, played: new Set(on.map(e => e.p)) };
+}
+function mkMatch(fx) {
+  return { fx, h: mkSide(T(fx.h)), a: mkSide(T(fx.a)), min: 0, ev: [], last: '', ycs: new Map(), red: new Set(), gl: new Map(), needSub: 0, fin: 0 };
+}
+function ev(m, k, type, txt) {
+  m.ev.push({ min: m.min, k, type, txt });
+}
+
+function strength(X, hf) {
+  let gk = 15, d = 0, mi = 0, a = 0;
+  X.on.forEach(e => {
+    if (e.st !== 'on') return;
+    const v = eff(e.p, e.role);
+    if (e.role === 'G') { gk = v; return; }
+    const w = W[e.role]; d += v * w[0]; mi += v * w[1]; a += v * w[2];
+  });
+  const st = STYLE[styleOf(X)], mk = MARK[X.t.mark], f = hf * TRAIN[X.t.train || 0].m;
+  return { gk: gk * f, def: d / 4.6 * st.d * mk.d * f, mid: mi / 3.6 * st.m * f, atk: a / 3.4 * st.a * f };
+}
+
+function chance(m, k, X, Y, sx, sy) {
+  const sh = wpick(X.on.filter(e => e.st === 'on'), e => SHW[e.role] * e.p.f * (e.p.tr.includes('Finalização') ? 1.3 : 1));
+  if (!sh) return;
+  const p = sh.p, gk = Y.on.find(e => e.role === 'G' && e.st === 'on');
+  let q = 0.2 * Math.pow((sx.atk + 1) / (sy.def * 0.65 + sy.gk * 0.35 + 1), 1.4);
+  if (styleOf(X) === 2) q *= 1.12;
+  if (p.tr.includes('Finalização')) q *= 1.08;
+  X.sh++;
+  if (R() < clamp(q, 0.03, 0.6)) {
+    X.g++; X.sot++; m.gl.set(p, (m.gl.get(p) || 0) + 1);
+    if (m.fx.c === 'L') p.g++; else p.go = (p.go || 0) + 1;
+    m.last = `${m.min}' ${p.n} (${X.t.name})`;
+    const head = p.tr.includes('Cabeceio') && R() < 0.35;
+    ev(m, k, 'gol', head ? `GOOOL do ${X.t.name}! ${p.n} sobe mais que a zaga e marca de cabeça!` : pick([
+      `GOOOL do ${X.t.name}! ${p.n} balança a rede!`,
+      `${p.n} recebe na área e não perdoa. Gol do ${X.t.name}!`,
+      `Golaço de ${p.n}! Festa da torcida do ${X.t.name}!`,
+      `${p.n} aproveita a sobra e empurra para o gol. ${X.t.name} marca!`]));
+  } else {
+    if (gk && R() < 0.3) { X.sot++; ev(m, k, 'txt', `${p.n} finaliza, ${gk.p.n} faz a defesa.`); return; }
+    ev(m, k, 'txt', pick([
+      `${p.n} finaliza para fora.`,
+      `${p.n} chuta por cima do gol.`,
+      `${p.n} acerta a trave!`,
+      `A zaga do ${Y.t.name} afasta o perigo.`,
+      `${p.n} bate cruzado, a bola passa raspando.`]));
+  }
+}
+
+function card(m, k, X, direct) {
+  const e = wpick(X.on.filter(e => e.st === 'on'), e => e.role === 'G' ? 0.15 : 0.5 + W[e.role][0]);
+  if (!e) return;
+  const n = (m.ycs.get(e.p) || 0) + 1;
+  if (!direct && n >= 2 && R() < 0.6) return; // o árbitro costuma segurar o segundo amarelo
+  if (direct || n >= 2) {
+    e.st = 'red'; m.red.add(e.p);
+    m.last = `${m.min}' ${e.p.n} expulso (${X.t.name})`;
+    ev(m, k, 'red', direct ? `Cartão vermelho direto! ${e.p.n} (${X.t.name}) está expulso.` : `Segundo amarelo: ${e.p.n} (${X.t.name}) está expulso.`);
+  } else {
+    m.ycs.set(e.p, n);
+    ev(m, k, 'yel', `Cartão amarelo para ${e.p.n} (${X.t.name}).`);
+  }
+}
+
+function sub(m, k, X, e, p) {
+  const out = e.p;
+  X.bench.splice(X.bench.indexOf(p), 1);
+  e.p = p; e.st = 'on'; X.subs++; X.played.add(p);
+  ev(m, k, 'sub', `${X.t.name}: entra ${p.n}, sai ${out.n}.`);
+}
+function bestBench(X, role) {
+  let b = null, bv = 0;
+  X.bench.forEach(p => { const v = eff(p, role); if (v > bv) { bv = v; b = p; } });
+  return b;
+}
+function injSub(m, k, X) {
+  X.on.forEach(e => {
+    if (e.st !== 'inj' || X.subs >= 5) return;
+    const b = bestBench(X, e.role);
+    if (b) sub(m, k, X, e, b);
+  });
+}
+function injury(m, k, X) {
+  const e = pick(X.on.filter(e => e.st === 'on'));
+  if (!e) return;
+  e.st = 'inj'; e.p.injN = ri(1, 6);
+  ev(m, k, 'inj', `${e.p.n} (${X.t.name}) sente a lesão e não consegue continuar.`);
+  if (X.human) m.needSub = 1; else injSub(m, k, X);
+}
+
+function aiCoach(m, k, X, Y) {
+  if (m.min === 70 || m.min === 82) X.style = X.g < Y.g ? 1 : (X.g > Y.g && m.min === 82 ? 2 : 0);
+  if ((m.min === 58 || m.min === 66 || m.min === 74) && X.subs < 5) {
+    let worst = null;
+    X.on.forEach(e => { if (e.st === 'on' && e.role !== 'G' && (!worst || e.p.en < worst.p.en)) worst = e; });
+    if (worst && worst.p.en < 72) {
+      const b = bestBench(X, worst.role);
+      if (b && eff(b, worst.role) > eff(worst.p, worst.role)) sub(m, k, X, worst, b);
+    }
+  }
+}
+
+function step(m) {
+  m.min++;
+  const S = { h: strength(m.h, 1.05), a: strength(m.a, 1) };
+  for (const k of ['h', 'a']) {
+    const o = k === 'h' ? 'a' : 'h', X = m[k], Y = m[o], sx = S[k], sy = S[o];
+    const mx = Math.pow(sx.mid + 1, 1.7), my = Math.pow(sy.mid + 1, 1.7);
+    X.pos += mx / (mx + my);
+    if (R() < 0.145 * mx / (mx + my)) chance(m, k, X, Y, sx, sy);
+    const mk = MARK[X.t.mark];
+    if (R() < mk.y) card(m, k, X, false);
+    if (R() < mk.r) card(m, k, X, true);
+    if (R() < 0.0011 * TRAIN[X.t.train || 0].inj) injury(m, k, X);
+    const sf = styleOf(X) === 1 ? 1.12 : 1;
+    X.on.forEach(e => {
+      if (e.st !== 'on') return;
+      let d = 0.21 * sf;
+      if (e.p.age > 30) d *= 1.25;
+      if (e.p.tr.includes('Resistência')) d *= 0.7;
+      if (e.role === 'G') d *= 0.3;
+      e.p.en = Math.max(0, e.p.en - d);
+    });
+    if (!X.human) aiCoach(m, k, X, Y);
+  }
+}
+
+function shootout(m) {
+  const conv = Y => { const gk = Y.on.find(e => e.role === 'G' && e.st === 'on'); return gk && gk.p.tr.includes('Pênalti') ? 0.7 : 0.76; };
+  const ph = conv(m.a), pa = conv(m.h);
+  let h = 0, a = 0;
+  for (let i = 0; i < 5; i++) { if (R() < ph) h++; if (R() < pa) a++; }
+  while (h === a) { if (R() < ph) h++; if (R() < pa) a++; }
+  ev(m, h > a ? 'h' : 'a', 'gol', `Decisão por pênaltis: ${m.h.t.name} ${h} x ${a} ${m.a.t.name}.`);
+  return [h, a];
+}
+
+function finish(m) {
+  if (m.fin) return;
+  const fx = m.fx;
+  m.fin = 1; fx.gh = m.h.g; fx.ga = m.a.g;
+  if (fx.ko) {
+    const th = fx.gh + (fx.agg ? fx.agg[0] : 0), ta = fx.ga + (fx.agg ? fx.agg[1] : 0);
+    if (th === ta) fx.pen = shootout(m);
+    fx.w = th > ta || (th === ta && fx.pen[0] > fx.pen[1]) ? fx.h : fx.a;
+  }
+  for (const k of ['h', 'a']) {
+    const X = m[k], Y = m[k === 'h' ? 'a' : 'h'];
+    const res = fx.w != null ? (fx.w === X.t.id ? 1 : -1) : Math.sign(X.g - Y.g), sc = Math.sign(X.g - Y.g);
+    let avg = 0; X.played.forEach(p => { avg += p.f; }); avg /= X.played.size || 1;
+    X.t.players.forEach(p => {
+      if (!X.played.has(p)) { p.mo = clamp(p.mo - 1, 20, 100); return; }
+      p.gp++; p.pl = 1; p.mo = clamp(p.mo + res * 3, 20, 100);
+      const e = X.on.find(x => x.p === p), role = e ? e.role : p.pos, gl = m.gl.get(p) || 0;
+      let r = 6 + sc * 0.4 + gl * 1.1 + gauss() * 0.45 + (p.f - avg) * 0.03;
+      if (role === 'G' || role === 'Z' || role === 'LD' || role === 'LE') r += Y.g === 0 ? 0.6 : -0.2 * Y.g;
+      if (role === 'A' && !gl) r -= 0.2;
+      if (m.ycs.get(p)) r -= 0.3;
+      if (m.red.has(p)) r -= 1.5;
+      p.lr = Math.round(clamp(r, 2, 10) * 10) / 10; p.rs = (p.rs || 0) + p.lr; p.rn = (p.rn || 0) + 1;
+    });
+    if (sc > 0) cp(X.t, (fx.c === 'L' ? 4 - X.t.div : fx.c === 'A' ? 4 : fx.c === 'C' ? 3 : 2) + (k === 'a' ? 1 : 0));
+    else if (sc === 0 && k === 'a') cp(X.t, 1);
+  }
+  m.red.forEach(p => { p.susN = 1; });
+  m.ycs.forEach((n, p) => {
+    if (m.red.has(p)) return;
+    if (++p.yc >= 3) { p.yc = 0; p.susN = 1; }
+  });
+}
+function simMatch(fx) {
+  const m = mkMatch(fx);
+  while (m.min < 90) step(m);
+  finish(m);
+  return m;
+}
+
+/* ---------- fim de cada data ---------- */
+
+function news(id, t) {
+  const pr = G.prof[id];
+  if (!pr) return;
+  pr.news.unshift({ s: G.season, d: G.cal.length ? dayName(G.day) : '', t });
+  if (pr.news.length > 90) pr.news.length = 90;
+  pr.unread++;
+}
+function addNews(t) { news(G.me, t); }
+function pay(t, amt) {
+  t.cash += amt;
+  if (isH(t)) PR(t.id).fin.prem += amt;
+}
+
+function attendance(t, pos, boost) {
+  const price = Math.min(1.3, Math.pow(TICKET[t.div] / Math.max(1, t.ticket), 1.5));
+  const d = demand(t.rep) * (0.75 + 0.5 * (1 - (pos - 1) / 19)) * price * (boost || 1) * (0.9 + R() * 0.2);
+  return Math.round(Math.min(t.cap, d));
+}
+
+function advanceReg(i) {
+  const hs = humans();
+  G.reg.forEach((reg, k) => {
+    const here = hs.filter(t => regOf(t) === k);
+    if (i < REG_ROUNDS - 1) reg.rounds.push(swiss(reg));
+    else if (i === REG_ROUNDS - 1) {
+      const tb = regTable(k).map(r => r.t.id);
+      reg.ko.push([mkFx(tb[0], tb[3], 'E', true), mkFx(tb[1], tb[2], 'E', true)]);
+      here.forEach(me => news(me.id, tb.indexOf(me.id) < 4 ? `O ${me.name} está na semifinal do ${REGS[k].n}!` : `O ${me.name} terminou a fase de liga do ${REGS[k].n} em ${tb.indexOf(me.id) + 1}º e está eliminado.`));
+    } else if (i === REG_ROUNDS) {
+      const [s1, s2] = reg.ko[0], order = regTable(k).map(r => r.t.id);
+      const fin = [s1.w, s2.w].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+      reg.ko.push([mkFx(fin[0], fin[1], 'E', true)]);
+    } else {
+      const f = reg.ko[1][0], ch = T(f.w), vice = T(f.w === f.h ? f.a : f.h);
+      reg.champ = ch.id;
+      pay(ch, nice(ch.spon * 6)); pay(vice, nice(vice.spon * 2));
+      cp(ch, 15); cp(vice, 3);
+      if (isH(ch)) { const pr = PR(ch.id); pr.conf = clamp(pr.conf + 15, 0, 100); pr.titles.push(`${REGS[k].n} ${G.season}`); }
+      here.forEach(me => news(me.id, `${ch.name} é o campeão do ${REGS[k].n}!` + (ch === me ? ` Premiação: ${$$(nice(ch.spon * 6))}.` : '')));
+    }
+  });
+}
+
+function advanceCup(i) {
+  const [ph, leg] = CUPD[i], ties = G.cup.ph[ph];
+  if (leg < CUP[ph].legs - 1) { // jogo de ida: o agregado vai para o jogo de volta
+    ties.forEach(t => { t.legs[1].agg = [t.legs[0].ga, t.legs[0].gh]; });
+    return;
+  }
+  const win = [];
+  ties.forEach(t => {
+    const fx = t.legs[leg], loser = T(fx.w === fx.h ? fx.a : fx.h);
+    t.w = fx.w; win.push(fx.w);
+    pay(T(fx.w), CUP[ph].prize);
+    if (ph === 6) { cp(T(fx.w), 20); cp(loser, 7); }
+    if (ph === 5) cp(loser, 3);
+    [fx.h, fx.a].forEach(id => {
+      if (!G.prof[id]) return;
+      news(id, fx.w === id
+        ? (ph === 6 ? `O ${T(id).name} é CAMPEÃO da Copa do Brasil! Premiação: ${$$(CUP[ph].prize)}.` : `Classificado na Copa do Brasil (${CUP[ph].n})! Premiação: ${$$(CUP[ph].prize)}.`)
+        : `O ${T(id).name} está eliminado da Copa do Brasil (${CUP[ph].n}).`);
+    });
+  });
+  if (ph < CUP.length - 1) G.cup.ph.push(mkTies(shuffle(ph === 0 ? win.concat(G.cup.bye) : win), ph + 1));
+  else {
+    G.cup.champ = win[0];
+    const pr = G.prof[win[0]];
+    if (pr) { pr.titles.push(`Copa do Brasil ${G.season}`); pr.conf = clamp(pr.conf + 20, 0, 100); }
+    humans().forEach(t => { if (t.id !== win[0]) news(t.id, `${T(win[0]).name} é o campeão da Copa do Brasil.`); });
+  }
+}
+
+function advanceAm(i) {
+  const A = G.am, hs = humans(), other = fx => T(fx.w === fx.h ? fx.a : fx.h);
+  const settle = (ties, prize, next) => ties.map(t => {
+    const fx = t.legs[t.legs.length - 1];
+    t.w = fx.w; pay(T(fx.w), prize);
+    if (next) [fx.h, fx.a].forEach(id => news(id, fx.w === id ? `O ${T(id).name} está na ${next} da ${AM_NAME}! Premiação: ${$$(prize)}.` : `O ${T(id).name} está eliminado da ${AM_NAME}.`));
+    return fx.w;
+  });
+  if (i === 5) {
+    const q = A.groups.map(g => amTable(g).map(r => r.t.id));
+    A.ko.push([amTie(q[1][1], q[0][0]), amTie(q[0][1], q[1][0]), amTie(q[3][1], q[2][0]), amTie(q[2][1], q[3][0])]);
+    q.forEach(g => g.slice(0, 2).forEach(id => pay(T(id), AM_PRIZE.qf)));
+    hs.forEach(me => { if (A.ids.includes(me.id)) news(me.id, q.some(g => g.indexOf(me.id) >= 0 && g.indexOf(me.id) < 2) ? `O ${me.name} avança às quartas de final da ${AM_NAME}! Premiação: ${$$(AM_PRIZE.qf)}.` : `O ${me.name} caiu na fase de grupos da ${AM_NAME}.`); });
+  } else if (i === 6 || i === 8) A.ko[A.ko.length - 1].forEach(t => { t.legs[1].agg = [t.legs[0].ga, t.legs[0].gh]; });
+  else if (i === 7) {
+    const w = settle(A.ko[0], AM_PRIZE.sf, 'semifinal');
+    A.ko.push([amTie(w[0], w[1]), amTie(w[2], w[3])]);
+  } else if (i === 9) {
+    const w = shuffle(settle(A.ko[1], AM_PRIZE.fin, 'final'));
+    A.ko[1].forEach(t => cp(other(t.legs[1]), 7));
+    A.ko.push([{ legs: [mkFx(w[0], w[1], 'A', true)], w: null }]);
+  } else if (i === 10) {
+    const fx = A.ko[2][0].legs[0], ch = T(settle(A.ko[2], AM_PRIZE.champ)[0]);
+    A.champ = ch.id; cp(ch, 30); cp(other(fx), 15);
+    if (isH(ch)) { const pr = PR(ch.id); pr.titles.push(`${AM_NAME} ${G.season}`); pr.conf = clamp(pr.conf + 25, 0, 100); }
+    hs.forEach(me => news(me.id, ch === me ? `O ${me.name} é CAMPEÃO da ${AM_NAME}! Premiação: ${$$(AM_PRIZE.champ)}.` : `${ch.name} é o campeão da ${AM_NAME}.`));
+  }
+}
+
+function endDay() {
+  const day = G.cal[G.day], groups = dayGroups(G.day), hs = humans();
+  const played = new Set(), fxOf = new Map();
+  groups.forEach(g => g.fxs.forEach(fx => { played.add(fx.h); played.add(fx.a); fxOf.set(fx.h, { fx, g }); fxOf.set(fx.a, { fx, g }); }));
+
+  G.teams.forEach(t => {
+    const tr = TRAIN[t.train || 0], pl = played.has(t.id), h = isH(t);
+    t.players.forEach(p => {
+      if (p.inj > 0) p.inj--;
+      if (p.sus > 0 && pl) p.sus--;
+      if (p.susN) { p.sus = 1; delete p.susN; if (h) news(t.id, `${p.n} está suspenso e não joga a próxima partida.`); }
+      if (p.injN) { p.inj = p.injN; delete p.injN; if (h) news(t.id, `${p.n} se lesionou: fora por ${p.inj} data(s).`); }
+      p.en = clamp(p.en + 17 + tr.e, 0, 100); p.d = 0;
+      if (p.age <= 27 && p.f < p.pot && R() < (p.pl ? 0.075 : 0.035) * tr.g) { p.f++; p.d = 1; }
+      else if (p.age >= 31 && p.f > 1 && R() < 0.023 * (p.age - 30)) { p.f--; p.d = -1; }
+      delete p.pl;
+      if (h && !p.loan && salOf(p) > p.sal * 1.6) { // joga muito mais do que ganha
+        p.mo = Math.max(20, p.mo - 1);
+        if (p.asked !== G.season) { p.asked = G.season; news(t.id, `${p.n} acha que merece um salário melhor e pede renovação de contrato.`); }
+      }
+    });
+  });
+  hs.forEach(t => PR(t.id).youth.forEach(j => { if (j.f < j.pot && R() < 0.16) j.f++; }));
+
+  // bilheteria (na copa a renda é dividida)
+  const pos = new Map();
+  if (day.t === 'L') for (let d = 0; d < 4; d++) table(d).forEach((row, i) => pos.set(row.t.id, i + 1));
+  const boost = day.t === 'C' ? 1 + 0.08 * CUPD[day.i][0] : day.t === 'S' ? 1.3 : day.t === 'A' ? 1.25 + 0.03 * day.i : day.t === 'E' && day.i >= REG_ROUNDS ? 1.2 : 1;
+  groups.forEach(g => g.fxs.forEach(fx => {
+    const h = T(fx.h), a = T(fx.a);
+    h.att = fx.att = attendance(h, pos.get(h.id) || 8, boost);
+    const inc = h.att * h.ticket, hs2 = day.t === 'C' ? Math.round(inc / 2) : inc;
+    h.cash += hs2; a.cash += inc - hs2;
+    if (isH(h)) PR(h.id).fin.tick += hs2;
+    if (isH(a)) PR(a.id).fin.tick += inc - hs2;
+  }));
+  G.teams.forEach(t => {
+    const wages = t.players.reduce((s, p) => s + p.sal, 0);
+    t.cash += t.spon - wages;
+    if (isH(t)) { PR(t.id).fin.spon += t.spon; PR(t.id).fin.sal += wages; }
+    else if (t.cash < 0) t.cash = 0;
+  });
+
+  hs.forEach(t => { const m = fxOf.get(t.id); if (m) news(t.id, `${m.g.title}: ${T(m.fx.h).name} ${scoreStr(m.fx)} ${T(m.fx.a).name}.`); });
+  if (day.t === 'E') advanceReg(day.i);
+  if (day.t === 'C') advanceCup(day.i);
+  if (day.t === 'A') advanceAm(day.i);
+  if (day.t === 'S') {
+    const ch = T(G.sc.fx.w);
+    G.sc.champ = ch.id; pay(ch, 5e6); cp(ch, 5);
+    if (isH(ch)) { const pr = PR(ch.id); pr.titles.push(`Supercopa do Brasil ${G.season}`); pr.conf = clamp(pr.conf + 8, 0, 100); }
+    hs.forEach(t => news(t.id, `${ch.name} vence a Supercopa do Brasil.` + (ch === t ? ' Premiação: R$ 5 mi.' : '')));
+  }
+  aiMarket();
+
+  // propostas dos clubes da CPU pelos jogadores de cada técnico humano: compra e empréstimo
+  hs.forEach(me => {
+    const pr = PR(me.id);
+    pr.offers = [];
+    me.players.forEach(p => {
+      if (p.loan) return;
+      if (R() < (p.sale ? 0.4 : 0.012)) {
+        const cands = G.teams.filter(t => !isH(t) && (t.div < 4 ? Math.abs(t.div - me.div) <= 1 : me.div === 0) && t.rep >= p.f - 14 && t.players.length < 28);
+        if (cands.length) {
+          const from = pick(cands);
+          pr.offers.push({ pid: p.id, from: from.id, amt: nice(value(p) * (p.sale ? 0.8 + R() * 0.3 : 1.15 + R() * 0.3)) });
+          news(me.id, `O ${from.name} fez uma proposta de compra por ${p.n}. Veja em Transferências.`);
+          return;
+        }
+      }
+      if (p.lend && R() < 0.45) {
+        const cands = G.teams.filter(t => !isH(t) && t.div < 4 && t.players.length < 28 && t.rep <= p.f + 10 && t.rep >= p.f - 8);
+        if (cands.length) {
+          const from = pick(cands);
+          pr.offers.push({ pid: p.id, from: from.id, loan: 1 });
+          news(me.id, `O ${from.name} quer ${p.n} por empréstimo até o fim da temporada. Veja em Transferências.`);
+        }
+      }
+    });
+  });
+
+  G.day++;
+  if (day.t === 'L') G.round++;
+  hs.forEach(me => {
+    const pr = PR(me.id), m = fxOf.get(me.id);
+    pr.ready = false;
+    if (m) {
+      const s = Math.sign((m.fx.h === me.id ? 1 : -1) * (m.fx.gh - m.fx.ga)), p = posOf(me);
+      pr.conf += s;
+      if (day.t === 'L' && G.round >= 5) pr.conf += p <= pr.goal.pos ? 1.5 : -(0.6 + (p - pr.goal.pos) / 8);
+      pr.conf = clamp(pr.conf, 0, 100);
+      if (pr.conf <= 0 && G.round >= 12 && G.day < G.cal.length - 3) fire(me.id);
+    }
+    if (G.day >= G.cal.length) pr.jobs = jobOffers(me.id, false);
+    if (G.day === G.cal.length - 8) {
+      const exp = me.players.filter(p => p.ce <= G.season && !p.loan);
+      if (exp.length) news(me.id, `Contratos que terminam no fim da temporada: ${exp.map(p => p.n).join(', ')}. Renove ou eles saem de graça.`);
+    }
+  });
+  if (G.day >= G.cal.length) G.over = true;
+  save();
+}
+
+/* ---------- mercado entre os clubes da CPU ---------- */
+
+function aiMarket() {
+  for (let k = 0; k < 2; k++) {
+    if (R() > 0.55) continue;
+    const buyer = pick(G.teams);
+    if (isH(buyer) || buyer.players.length >= 26) continue;
+    const fs = buyer.players.map(p => p.f).sort((a, b) => b - a), need = fs[10] || 0;
+    const cands = [];
+    G.teams.forEach(t => {
+      if (isH(t) || t === buyer || t.players.length <= 20) return;
+      t.players.forEach(p => { if (p.sale && !p.loan && p.f > need && p.f <= buyer.rep + 10 && value(p) <= buyer.cash * 0.6) cands.push({ p, t, cost: nice(value(p) * 1.05) }); });
+    });
+    G.free.forEach(p => { if (p.f > (fs[14] || 0) && p.f <= buyer.rep + 10 && luvas(p) <= buyer.cash * 0.6) cands.push({ p, t: null, cost: luvas(p) }); });
+    if (!cands.length) continue;
+    const c = cands.sort((a, b) => b.p.f - a.p.f)[ri(0, Math.min(2, cands.length - 1))], p = c.p;
+    if (c.t) { c.t.players.splice(c.t.players.indexOf(p), 1); c.t.cash += c.cost; } else G.free.splice(G.free.indexOf(p), 1);
+    buyer.players.push(p); buyer.cash -= c.cost;
+    p.sale = 0; p.sal = salOf(p);
+    // o comprador coloca à venda o reserva mais fraco, para o mercado continuar girando
+    const weak = buyer.players.filter(x => x.pos !== 'G' && x !== p && !x.loan).sort((a, b) => a.f - b.f)[0];
+    if (weak) weak.sale = 1;
+    G.mkt.unshift({ d: dayName(G.day), n: p.n, pos: p.pos, f: p.f, from: c.t ? c.t.id : null, to: buyer.id, amt: c.cost });
+    if (G.mkt.length > 40) G.mkt.length = 40;
+    PM = null;
+  }
+}
+
+/* ---------- transferências, empréstimos e contratos ---------- */
+
+function askFor(p, t) {
+  const eleventh = t.players.map(x => x.f).sort((a, b) => b - a)[10] || 0;
+  return value(p) * (p.sale ? 1.05 : p.f >= eleventh ? 1.45 : 1.2);
+}
+const luvas = p => nice(value(p) * 0.15);
+const loanFee = p => nice(value(p) * 0.08);
+const negoKey = () => G.season * 100 + G.day;
+
+function dropFromLineup(t, pid) {
+  t.xi = t.xi.map(id => id === pid ? null : id);
+  t.bench = t.bench.filter(id => id !== pid);
+}
+function keepCheck(me, p) {
+  if (me.players.length <= MIN_SQUAD) return `Você precisa manter pelo menos ${MIN_SQUAD} jogadores no elenco.`;
+  if (p.pos === 'G' && me.players.filter(x => x.pos === 'G').length <= 1) return 'Você não pode ficar sem goleiro.';
+  return null;
+}
+function sellerCheck(p, t) {
+  if (p.loan) return `${p.n} está emprestado e não pode ser negociado agora.`;
+  if (p.nego === negoKey()) return `O ${t.name} não quer mais conversar sobre ${p.n} nesta data.`;
+  if (t.players.length <= 18) return `O ${t.name} está com o elenco curto e não libera ninguém.`;
+  if (p.pos === 'G' && t.players.filter(x => x.pos === 'G').length <= 2) return `O ${t.name} não pode ficar sem goleiros.`;
+  return null;
+}
+
+// compra (ou contratação de jogador livre). Devolve null se fechou, ou o motivo da recusa.
+function tryBuy(pid, amt, ce) {
+  const me = T(G.me), p = P(pid), t = teamOf(pid);
+  if (!p) return 'Jogador não encontrado.';
+  if (me.players.length >= MAX_SQUAD) return `Seu elenco já tem ${MAX_SQUAD} jogadores.`;
+  if (!t) amt = luvas(p);
+  if (!(amt > 0) || amt > me.cash) return 'Você não tem esse dinheiro em caixa.';
+  if (p.f > me.rep + 12) return `${p.n} não tem interesse em jogar no ${me.name} neste momento.`;
+  if (t === me) return 'Esse jogador já é seu.';
+  if (t) {
+    const no = sellerCheck(p, t), hum = isH(t);
+    if (no) return no;
+    if (hum && !p.sale) return `${p.n} pertence ao clube de outro técnico e só sai se ele colocar o jogador à venda.`;
+    const ask = askFor(p, t);
+    if (amt < ask) { if (!hum) p.nego = negoKey(); return `O ${t.name} recusou a proposta. O clube pede cerca de ${$$(nice(ask))}.`; }
+    t.players.splice(t.players.indexOf(p), 1);
+    t.cash += amt;
+    if (hum) { // venda entre dois técnicos humanos: fecha pelo valor pedido de quem colocou à venda
+      const ps = PR(t.id);
+      dropFromLineup(t, p.id); ps.fin.tin += amt; ps.offers = ps.offers.filter(x => x.pid !== p.id);
+      news(t.id, `${p.n} foi vendido ao ${me.name} por ${$$(amt)}.`);
+    } else if (t.players.length < 20) t.players.push(youth(t, p.pos));
+  } else G.free.splice(G.free.indexOf(p), 1);
+  me.players.push(p); me.cash -= amt; MY().fin.tout += amt;
+  p.sale = p.lend = 0; p.sal = salOf(p); p.mo = 70; p.ce = clamp(ce || G.season + 1, G.season, G.season + 2);
+  addNews(`${p.n} (${POSN[p.pos]}, força ${p.f}) é o novo reforço, por ${$$(amt)}${t ? ' pagos ao ' + t.name : ' em luvas'}. Contrato até ${p.ce}.`);
+  PM = null; save();
+  return null;
+}
+
+// empréstimo de um jogador de outro clube até o fim da temporada
+function tryLoan(pid) {
+  const me = T(G.me), p = P(pid), t = teamOf(pid), fee = loanFee(p);
+  if (!t) return 'Jogador livre pode ser contratado em definitivo.';
+  if (me.players.length >= MAX_SQUAD) return `Seu elenco já tem ${MAX_SQUAD} jogadores.`;
+  if (fee > me.cash) return 'Você não tem dinheiro para a taxa de empréstimo.';
+  if (p.f > me.rep + 12) return `${p.n} não tem interesse em jogar no ${me.name} neste momento.`;
+  if (isH(t)) return 'Empréstimo entre dois técnicos humanos não está disponível; negocie a compra.';
+  const no = sellerCheck(p, t);
+  if (no) return no;
+  const eleventh = t.players.map(x => x.f).sort((a, b) => b - a)[10] || 0;
+  if (p.f >= eleventh && !p.sale) { p.nego = negoKey(); return `O ${t.name} conta com ${p.n} no time titular e não empresta.`; }
+  t.players.splice(t.players.indexOf(p), 1);
+  t.cash += fee; me.cash -= fee; MY().fin.tout += fee;
+  p.loan = { from: t.id }; p.sale = 0; p.mo = 65;
+  me.players.push(p);
+  addNews(`${p.n} (${POSN[p.pos]}, força ${p.f}) chega por empréstimo do ${t.name} até o fim da temporada. Taxa: ${$$(fee)}.`);
+  PM = null; save();
+  return null;
+}
+
+function acceptOffer(i) {
+  const me = T(G.me), pr = MY(), o = pr.offers[i];
+  if (!o) return 'Essa proposta não está mais disponível.';
+  const p = P(o.pid), no = keepCheck(me, p);
+  if (no) return no;
+  me.players.splice(me.players.indexOf(p), 1);
+  dropFromLineup(me, p.id);
+  p.sale = p.lend = 0; T(o.from).players.push(p);
+  if (o.loan) {
+    p.loan = { from: me.id };
+    addNews(`${p.n} foi emprestado ao ${T(o.from).name} até o fim da temporada. O salário fica por conta deles.`);
+  } else {
+    me.cash += o.amt; pr.fin.tin += o.amt;
+    addNews(`${p.n} foi vendido ao ${T(o.from).name} por ${$$(o.amt)}.`);
+  }
+  pr.offers = pr.offers.filter(x => x.pid !== p.id);
+  PM = null; save();
+  return null;
+}
+
+const releaseFee = p => p.sal * 4 * Math.max(1, p.ce - G.season + 1);
+function release(pid) {
+  const me = T(G.me), p = P(pid);
+  if (!p || !me.players.includes(p)) return 'Jogador não encontrado no seu elenco.';
+  if (p.loan) return `${p.n} está emprestado; ele volta ao clube de origem no fim da temporada.`;
+  const no = keepCheck(me, p);
+  if (no) return no;
+  const fee = releaseFee(p);
+  me.players.splice(me.players.indexOf(p), 1);
+  dropFromLineup(me, pid);
+  me.cash -= fee; MY().fin.sal += fee;
+  p.sale = p.lend = 0; G.free.push(p);
+  MY().offers = MY().offers.filter(x => x.pid !== pid);
+  addNews(`${p.n} foi dispensado. Rescisão: ${$$(fee)}.`);
+  PM = null; save();
+  return null;
+}
+
+// pedida salarial para renovar: salário de mercado (sem cair muito do atual), mais a "gordura" de cada jogador
+const renewAsk = p => nice(Math.max(p.sal * 0.85, salOf(p)) * (1.05 + (p.id * 37 % 21) / 100));
+function renew(pid, ce, sal) {
+  const p = P(pid);
+  if (!p || !T(G.me).players.includes(p)) return 'Jogador não encontrado no seu elenco.';
+  if (p.loan) return `${p.n} está emprestado e não pode renovar com você.`;
+  if (p.rn === negoKey()) return `${p.n} não quer mais falar de contrato nesta data.`;
+  if (p.mo < 35) return `${p.n} está insatisfeito no clube e não quer renovar agora.`;
+  if (p.age >= 33 && ce > G.season + 1) return `Aos ${p.age} anos, ${p.n} só aceita renovar por mais uma temporada.`;
+  if (!(sal >= renewAsk(p))) { p.rn = negoKey(); return `${p.n} recusou. Ele pede ${$$(renewAsk(p))} por data.`; }
+  p.sal = Math.round(sal); p.ce = clamp(ce, G.season + 1, G.season + 3); p.mo = clamp(p.mo + 8, 20, 100);
+  addNews(`${p.n} renovou contrato até ${p.ce}, com salário de ${$$(p.sal)} por data.`);
+  save();
+  return null;
+}
+
+const SEAT_COST = 300;
+function expand(n) {
+  const me = T(G.me), cost = n * SEAT_COST;
+  if (cost > me.cash) return 'Você não tem dinheiro para essa obra.';
+  me.cash -= cost; me.cap += n; MY().fin.obras += cost;
+  addNews(`O estádio foi ampliado em ${n.toLocaleString('pt-BR')} lugares. Nova capacidade: ${me.cap.toLocaleString('pt-BR')}.`);
+  save();
+  return null;
+}
+
+/* ---------- categorias de base ---------- */
+
+function mkJunior(t) {
+  const pos = pick(SQUAD), age = ri(15, 18), star = R() < 0.06;
+  const pot = clamp(Math.round(star ? t.rep + 10 + ri(0, 10) : t.rep - 6 + gauss() * 7), 20, 97);
+  return { id: G.nid++, n: mkName(), pos, age, pot, f: clamp(pot - (20 - age) * 5 - ri(0, 6), 5, pot), cpe: clamp(pot + ri(-5, 5), 15, 99), tr: mkTraits(pos) };
+}
+function intake(n) {
+  const me = T(G.me), ys = MY().youth, got = [];
+  while (n-- > 0 && ys.length < MAX_YOUTH) { const j = mkJunior(me); ys.push(j); got.push(j); }
+  return got;
+}
+function promote(jid) {
+  const me = T(G.me), ys = MY().youth, i = ys.findIndex(j => j.id === jid), j = ys[i];
+  if (!j) return 'Júnior não encontrado.';
+  if (me.players.length >= MAX_SQUAD) return `Seu elenco já tem ${MAX_SQUAD} jogadores.`;
+  ys.splice(i, 1);
+  const p = mkPlayer(j.pos, j.f, j.age, j.pot);
+  p.id = j.id; p.n = j.n; p.tr = j.tr; p.ce = G.season + 2; p.mo = 75;
+  me.players.push(p);
+  addNews(`${p.n} (${POSN[p.pos]}, ${p.age} anos, força ${p.f}) foi promovido da base ao profissional. Contrato até ${p.ce}.`);
+  PM = null; save();
+  return null;
+}
+function dismissJunior(jid) {
+  MY().youth = MY().youth.filter(j => j.id !== jid);
+  save();
+}
+
+/* ---------- virada de temporada ---------- */
+
+function rollover() {
+  const tabs = [0, 1, 2, 3].map(table), hs = humans(), met = new Map();
+  const best = awards(0).best;
+  G.hist.push({ s: G.season, ch: tabs.map(tb => tb[0].t.name), cup: T(G.cup.champ).name, am: G.am && G.am.champ != null ? T(G.am.champ).name : '', bo: best ? `${best.p.n} (${best.t.name})` : '' });
+  tabs.forEach((tb, d) => (d === 0 ? [25, 10, 8, 7, 6, 5, 4, 3, 2, 1] : d === 1 ? [5, 3, 2, 1] : [2, 1]).forEach((n, i) => cp(tb[i].t, n)));
+  hs.forEach(me => {
+    const pr = PR(me.id), pos = tabs[me.div].findIndex(r => r.t === me) + 1;
+    met.set(me.id, pos <= pr.goal.pos);
+    pr.hist.push({ s: G.season, club: me.name, div: me.div, pos });
+    pr.conf = clamp(pr.conf + (pos <= pr.goal.pos ? 15 : -20), 0, 100);
+    if (pos === 1) pr.titles.push(`${DIVS[me.div]} ${G.season}`);
+  });
+  tabs.forEach((tb, d) => tb.forEach((row, i) => {
+    const pz = Math.round(PRIZE[d] * (20 - i) / 20);
+    row.t.cash += pz;
+    if (isH(row.t)) PR(row.t.id).lastPrize = pz;
+  }));
+  for (let d = 0; d < 3; d++) {
+    tabs[d].slice(-4).forEach(row => { row.t.div = d + 1; row.t.rep -= 2; });
+    tabs[d + 1].slice(0, 4).forEach(row => { row.t.div = d; row.t.rep += 2; });
+  }
+  T(G.cup.champ).rep += 1;
+  // Supercopa do ano seguinte: campeão da Série A x campeão da Copa (ou o vice da liga, se for o mesmo clube)
+  G.scq = [tabs[0][0].t.id, G.cup.champ === tabs[0][0].t.id ? tabs[0][1].t.id : G.cup.champ];
+  // vagas na próxima Taça das Américas: os 5 primeiros da Série A e o campeão da Copa (ou o 6º colocado)
+  G.amq = tabs[0].slice(0, 5).map(r => r.t.id);
+  G.amq.push(G.amq.includes(G.cup.champ) ? tabs[0][5].t.id : G.cup.champ);
+
+  G.season++; G.day = 0; G.round = 0; G.cal = [];
+  hs.forEach(me => {
+    const pr = PR(me.id);
+    pr.news = []; pr.unread = 0;
+    news(me.id, `Começa a temporada ${G.season}! Premiação da liga na temporada passada: ${$$(pr.lastPrize)}.`);
+    news(me.id, met.get(me.id) ? 'A diretoria está satisfeita: o objetivo da temporada passada foi cumprido.' : 'A diretoria está insatisfeita: o objetivo da temporada passada não foi cumprido.');
+  });
+
+  // fim dos empréstimos
+  G.teams.forEach(t => t.players.filter(p => p.loan).forEach(p => {
+    const home = T(p.loan.from);
+    t.players.splice(t.players.indexOf(p), 1);
+    if (isH(t)) dropFromLineup(t, p.id);
+    news(home.id, `${p.n} voltou do empréstimo ao ${t.name} com força ${p.f}.`);
+    delete p.loan;
+    home.players.push(p);
+  }));
+
+  const carry = [];
+  G.teams.forEach(t => {
+    const human = isH(t), gone = [];
+    t.players.forEach(p => { p.age++; });
+    t.players = t.players.filter(p => {
+      const ret = human ? p.age >= 38 : (p.age >= 34 && R() < (p.age - 33) * 0.3);
+      if (ret) gone.push(p);
+      return !ret;
+    });
+    if (human) {
+      gone.forEach(p => news(t.id, `${p.n} se aposentou aos ${p.age} anos.`));
+      t.players = t.players.filter(p => {
+        if (p.ce >= G.season) return true;
+        news(t.id, `O contrato de ${p.n} terminou e ele deixou o clube.`);
+        carry.push(p);
+        return false;
+      });
+      let filled = 0;
+      while (t.players.length < MIN_SQUAD || !t.players.some(p => p.pos === 'G')) {
+        t.players.push(youth(t, t.players.some(p => p.pos === 'G') ? pick(SQUAD) : 'G')); filled++;
+      }
+      if (filled) news(t.id, `A diretoria trouxe ${filled} jogador(es) para completar o elenco mínimo.`);
+      cleanLineup(t);
+    } else {
+      gone.forEach(p => t.players.push(youth(t, p.pos)));
+      // reforços e limpeza do elenco dos clubes da CPU
+      const target = DIV_TARGET[t.div] * 0.6 + t.rep * 0.4;
+      for (let k = 0; k < 2 && top11(t) < target + 3; k++) {
+        const out = t.players.filter(p => p.pos !== 'G' && p.age > 23).sort((a, b) => a.f - b.f)[0];
+        if (!out) break;
+        t.players.splice(t.players.indexOf(out), 1);
+        t.players.push(mkPlayer(out.pos, target + gauss() * 4, ri(22, 29), null, t.es));
+      }
+      t.players.push(youth(t, pick(SQUAD)));
+      while (t.players.length > 26) {
+        const out = t.players.filter(p => p.pos !== 'G').sort((a, b) => a.f - b.f)[0];
+        t.players.splice(t.players.indexOf(out), 1);
+      }
+      t.players.forEach(p => { p.sal = salOf(p); });
+    }
+    const best16 = t.players.map(p => p.f).sort((a, b) => b - a).slice(0, 16);
+    t.rep = t.rep * 0.7 + best16.reduce((s, x) => s + x, 0) / best16.length * 0.3;
+  });
+
+  // base: todo mundo fica um ano mais velho, quem estourou a idade sai, e chega a peneira
+  hs.forEach(me => {
+    const pr = PR(me.id);
+    pr.youth.forEach(j => { j.age++; });
+    const old = pr.youth.filter(j => j.age >= 22);
+    if (old.length) news(me.id, `Estouraram a idade e deixaram a base: ${old.map(j => j.n).join(', ')}.`);
+    pr.youth = pr.youth.filter(j => j.age < 22);
+    const got = as(me.id, () => intake(5));
+    if (got.length) news(me.id, `Peneira: ${got.length} novo(s) garoto(s) na base. Destaque: ${got.sort((a, b) => b.cpe - a.cpe)[0].n} (CPE ${got[0].cpe}).`);
+  });
+
+  carry.forEach(p => { p.sale = p.lend = 0; });
+  startSeason(carry);
+  hs.forEach(me => { if (PR(me.id).conf <= 0) fire(me.id); });
+  save();
+}
+
+/* ---------- prêmios e carreira do técnico ---------- */
+
+// melhor jogador e seleção da temporada de uma divisão, pela média de notas (mínimo de 20 jogos)
+function awards(div) {
+  const pool = G.teams.filter(t => t.div === div).flatMap(t => t.players.filter(p => p.rn >= 20).map(p => ({ p, t, r: p.rs / p.rn }))).sort((a, b) => b.r - a.r);
+  const xi = [], used = new Set();
+  for (const pos of ['G', 'LD', 'Z', 'Z', 'LE', 'V', 'V', 'M', 'M', 'A', 'A']) {
+    const c = pool.find(x => x.p.pos === pos && !used.has(x.p.id));
+    if (c) { xi.push(c); used.add(c.p.id); }
+  }
+  return { best: pool[0] || null, xi };
+}
+
+// clubes interessados no técnico: melhores que o atual se a fase é boa, piores se ele foi demitido
+function jobOffers(id, fired) {
+  const me = T(id), pr = PR(id), others = G.teams.filter(t => t !== me && t.div < 4 && !isH(t));
+  let c;
+  if (fired) {
+    c = others.filter(t => t.rep < me.rep - 2);
+    if (c.length < 3) c = others.slice().sort((a, b) => a.rep - b.rep).slice(0, 3);
+  } else {
+    if (pr.conf < 55) return [];
+    c = others.filter(t => t.rep > me.rep + 1 && t.rep <= me.rep + 3 + (pr.conf - 50) / 5);
+  }
+  return shuffle(c).slice(0, 3).map(t => t.id);
+}
+function fire(id = G.me) {
+  const pr = PR(id);
+  pr.fired = true; pr.jobs = jobOffers(id, true);
+  news(id, `A diretoria do ${T(id).name} perdeu a confiança e demitiu ${pr.coach}.`);
+}
+function takeOver(id) {
+  if (G.prof[id] || !T(id) || T(id).div > 3) return 'Esse clube não está disponível.';
+  const oldId = G.me, old = T(oldId), was = G.prof[oldId];
+  old.coach = { n: pick(FN) + ' ' + pick(SN), pts: 0 };
+  old.players.forEach(p => { p.sale = p.lend = 0; });
+  delete G.prof[oldId];
+  addHuman(id, was.coach);
+  const pr = G.prof[id];
+  pr.cpts = was.cpts; pr.titles = was.titles; pr.hist = was.hist; pr.on = was.on;
+  pr.news = pr.news.concat(was.news); pr.unread += was.unread;
+  G.me = id;
+  PM = null; save();
+  return null;
+}
+function coachRank() {
+  const rows = G.teams.filter(t => !isH(t)).map(t => ({ n: t.coach.n, club: t.name, pts: t.coach.pts }));
+  humans().forEach(t => rows.push({ n: PR(t.id).coach, club: t.name, pts: PR(t.id).cpts, me: t.id === G.me, hum: true }));
+  return rows.sort((a, b) => b.pts - a.pts);
+}
+
+/* ---------- salvar ---------- */
+
+function save() {
+  if (typeof NET !== 'undefined' && NET.role === 'guest') return true;
+  try { localStorage.setItem(SAVE, JSON.stringify(G)); return true; } catch (e) { return false; }
+}
+function load() {
+  try {
+    const s = localStorage.getItem(SAVE);
+    if (!s) return false;
+    G = JSON.parse(s); PM = null;
+    migrate();
+    return true;
+  } catch (e) { return false; }
+}
+function hasSave() {
+  try { return !!localStorage.getItem(SAVE); } catch (e) { return false; }
+}
+
+function migrate() {
+  G.teams.forEach(t => { if (!t.coach) t.coach = { n: pick(FN) + ' ' + pick(SN), pts: 0 }; });
+  // saves anteriores à Taça das Américas: os estrangeiros entram agora e a competição começa na próxima temporada
+  if (G.teams.length === CLUBS.length) FOREIGN.forEach((s, i) => G.teams.push(mkTeam(s, CLUBS.length + i)));
+  if (G.am === undefined) G.am = null;
+  if (!G.mkt) G.mkt = [];
+  if (G.sc === undefined) G.sc = null;
+  // saves de antes do modo online: os dados do técnico ficavam soltos em G; agora vão para o perfil dele
+  if (!G.prof) {
+    G.prof = {};
+    if (G.me != null) {
+      G.prof[G.me] = {
+        coach: G.coach || 'Técnico', youth: G.youth || [], offers: G.offers || [], news: G.news || [], unread: G.unread || 0, fin: G.fin || newFin(),
+        conf: G.conf == null ? 60 : G.conf, goal: G.goal || mkGoal(T(G.me)), cpts: G.cpts || 0, jobs: G.jobs || [], fired: !!G.fired, titles: G.titles || [],
+        lastPrize: G.lastPrize || 0, hist: (G.hist || []).map(h => ({ s: h.s, club: h.club || T(G.me).name, div: h.div, pos: h.pos })), ready: false, on: true
+      };
+    }
+    ['coach', 'youth', 'offers', 'news', 'unread', 'fin', 'conf', 'goal', 'cpts', 'jobs', 'fired', 'titles', 'lastPrize'].forEach(k => { delete G[k]; });
+  }
+}
+</script>
+<script>
+'use strict';
+// Modo online: liga com amigos. Quem cria a sala guarda o mundo e roda os jogos (servidor);
+// os convidados mandam ações (rpc) e recebem de volta o estado do jogo e o andamento das partidas.
+
+const NET = { role: null, code: '', peer: null, bc: null, bcId: '', conns: new Map(), host: null, rpcId: 0, pend: new Map(), afterQ: [], blob: null, blobT: null, bT: null, pick: null, lastLive: null };
+const PEER_URL = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+const NOSYNC = new Set(['setTeam', 'liveTac', 'liveSub', 'ready', 'nextJob']); // ações que não exigem reenviar o mundo inteiro
+const online = () => NET.role != null;
+const isGuest = () => NET.role === 'guest';
+const isHost = () => NET.role === 'host';
+
+/* ---------- ações (valem também no jogo solo) ---------- */
+
+const RPC = {
+  tryBuy, tryLoan, acceptOffer, release, renew, expand, promote, takeOver,
+  dismissJunior(jid) { dismissJunior(jid); return null; },
+  rejectOffer(i) { MY().offers.splice(i, 1); return null; },
+  setFlag(pid, k, v) {
+    const p = P(pid);
+    if (!p || !T(G.me).players.includes(p) || (k !== 'sale' && k !== 'lend')) return null;
+    p.sale = p.lend = 0; p[k] = v ? 1 : 0;
+    return null;
+  },
+  setTeam(o) {
+    const t = T(G.me), ids = new Set(t.players.map(p => p.id)), int = (v, max) => clamp(Math.round(+v) || 0, 0, max);
+    if (FORMS[o.form]) t.form = o.form;
+    if (Array.isArray(o.xi) && o.xi.length === 11) { const seen = new Set(); t.xi = o.xi.map(id => ids.has(id) && !seen.has(id) ? (seen.add(id), id) : null); }
+    if (Array.isArray(o.bench)) t.bench = [...new Set(o.bench)].filter(id => ids.has(id) && !t.xi.includes(id)).slice(0, 7);
+    t.style = int(o.style, STYLE.length - 1); t.mark = int(o.mark, MARK.length - 1); t.train = int(o.train, TRAIN.length - 1);
+    t.ticket = clamp(Math.round(+o.ticket) || TICKET[t.div], 1, 500);
+    return null;
+  },
+  ready(v) { MY().ready = !!v; setTimeout(hostCheck, 0); return null; },
+  nextJob(id) { MY().nextJob = id; return null; },
+  liveTac(k, v) { if (k === 'style' || k === 'mark') T(G.me)[k] = clamp(Math.round(+v) || 0, 0, 2); return null; },
+  liveSub(onIdx, pid) {
+    const m = LIVE && LIVE.all && LIVE.all.find(x => x.fx.h === G.me || x.fx.a === G.me);
+    if (!m || LIVE.done) return 'A partida não está em andamento.';
+    const k = m.fx.h === G.me ? 'h' : 'a', X = m[k], e = X.on[onIdx], p = X.bench.find(b => b.id === pid);
+    if (!e || !p) return 'Substituição inválida.';
+    if (X.subs >= 5) return 'Você já fez as 5 substituições.';
+    if (e.st === 'red') return 'Jogador expulso não pode ser substituído.';
+    sub(m, k, X, e, p);
+    return null;
+  }
+};
+
+// executa uma ação do técnico: direto no jogo solo e na sala do anfitrião; pela rede se for convidado
+function act(fn, args, cb) {
+  if (isGuest()) {
+    const id = ++NET.rpcId;
+    NET.pend.set(id, cb || (() => {}));
+    NET.host.send({ t: 'rpc', id, fn, args });
+    return;
+  }
+  let r = RPC[fn](...args);
+  if (r === undefined) r = null;
+  if (isHost() && typeof r !== 'string') { if (NOSYNC.has(fn)) bcastReady(); else bcastSoon(); }
+  if (cb) cb(r);
+}
+
+/* ---------- transporte ---------- */
+
+function loadPeer(cb) {
+  if (window.Peer) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = PEER_URL;
+  s.onload = cb;
+  s.onerror = () => alertBox('Sem conexão', 'Não foi possível carregar o componente de rede. Verifique a internet e tente de novo.');
+  document.head.appendChild(s);
+}
+const mkCode = () => Array.from({ length: 5 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)]).join('');
+const connOf = id => [...NET.conns.values()].find(w => w.team === id);
+
+// o anfitrião abre a sala. "local" usa só abas do mesmo navegador (para testar sem internet).
+function netCreate(local) {
+  if (online()) return;
+  const code = (local ? 'LOCAL' : '') + mkCode();
+  const opened = () => {
+    NET.role = 'host'; NET.code = code;
+    humans().forEach(t => { PR(t.id).on = t.id === G.me; PR(t.id).ready = false; });
+    render(); netBox();
+  };
+  if (local) {
+    NET.bc = new BroadcastChannel('prancheta-' + code);
+    NET.bc.onmessage = e => {
+      const { from, to, d } = e.data || {};
+      if (to !== 'host') return;
+      let w = NET.conns.get(from);
+      if (!w) w = { id: from, team: null, send: o => NET.bc.postMessage({ to: from, d: o }) };
+      hostRecv(w, d);
+    };
+    opened();
+    return;
+  }
+  loadPeer(() => {
+    const peer = NET.peer = new Peer('prancheta-' + code);
+    peer.on('open', opened);
+    peer.on('connection', c => {
+      const w = { id: c.peer, team: null, send: o => { try { c.send(o); } catch (e) { /* conexão caiu */ } } };
+      c.on('data', d => hostRecv(w, d));
+      c.on('close', () => hostGone(w));
+      c.on('error', () => hostGone(w));
+    });
+    peer.on('error', e => { if (!online()) { NET.peer = null; alertBox('Não foi possível criar a sala', 'O serviço de conexão não respondeu (' + esc(e.type || 'erro') + '). Tente de novo em instantes.'); } });
+  });
+}
+
+function netJoin(code, name) {
+  code = String(code || '').trim().toUpperCase();
+  name = String(name || '').trim().slice(0, 24) || 'Convidado';
+  if (!code) { toast('Digite o código da sala.'); return; }
+  const hello = () => { NET.role = 'guest'; NET.code = code; NET.host.send({ t: 'hello', name }); toast('Conectado. Aguardando o anfitrião…'); };
+  if (code.startsWith('LOCAL')) {
+    NET.bcId = 'g' + Math.random().toString(36).slice(2, 9);
+    NET.bc = new BroadcastChannel('prancheta-' + code);
+    NET.bc.onmessage = e => { if (e.data && e.data.to === NET.bcId) guestRecv(e.data.d); };
+    NET.host = { send: d => NET.bc.postMessage({ from: NET.bcId, to: 'host', d }) };
+    hello();
+    return;
+  }
+  toast('Conectando…');
+  loadPeer(() => {
+    const peer = NET.peer = new Peer();
+    peer.on('open', () => {
+      const c = peer.connect('prancheta-' + code, { reliable: true });
+      NET.host = { send: d => { try { c.send(d); } catch (e) { /* conexão caiu */ } } };
+      c.on('open', hello);
+      c.on('data', guestRecv);
+      c.on('close', () => netLeave('A conexão com a sala caiu.'));
+    });
+    peer.on('error', e => { if (!isGuest()) { NET.peer = null; alertBox('Não foi possível entrar', e.type === 'peer-unavailable' ? 'Não existe sala aberta com esse código.' : 'O serviço de conexão não respondeu. Tente de novo em instantes.'); } });
+  });
+}
+
+function netLeave(msg) {
+  if (!online() && !NET.peer && !NET.bc) return;
+  const guest = isGuest();
+  try { if (guest && NET.host) NET.host.send({ t: 'bye' }); } catch (e) { /* já caiu */ }
+  try { if (NET.peer) NET.peer.destroy(); } catch (e) { /* já fechado */ }
+  try { if (NET.bc) NET.bc.close(); } catch (e) { /* já fechado */ }
+  if (LIVE && (LIVE.net || LIVE.remote)) { clearTimeout(LIVE.timer); LIVE = null; }
+  Object.assign(NET, { role: null, code: '', peer: null, bc: null, host: null, pick: null, blob: null, lastLive: null, afterQ: [] });
+  NET.conns.clear(); NET.pend.clear();
+  if (guest || UI.view === 'join') { UI.view = 'start'; UI.creating = false; closeModal(); render(); }
+  if (msg) alertBox('Sala online', msg);
+}
+window.addEventListener('beforeunload', () => { if (isGuest() && NET.host) NET.host.send({ t: 'bye' }); });
+
+/* ---------- anfitrião ---------- */
+
+function hostRecv(w, d) {
+  if (!isHost() || !d) return;
+  if (d.t === 'hello') {
+    NET.conns.set(w.id, w);
+    let name = String(d.name || '').trim().slice(0, 24) || 'Convidado';
+    const back = humans().find(t => PR(t.id).coach === name && t.id !== G.me && !connOf(t.id));
+    if (back) { w.name = name; bind(w, back.id); return; }
+    while (humans().some(t => PR(t.id).coach === name)) name += ' 2';
+    w.name = name;
+    w.send({ t: 'pick', teams: G.teams.filter(t => t.div < 4 && !isH(t)).map(t => ({ id: t.id, name: t.name, uf: t.uf, div: t.div, c1: t.c1, c2: t.c2, pat: t.pat, f: Math.round(top11(t)) })) });
+  } else if (d.t === 'pick') {
+    const t = T(d.id);
+    if (w.team != null) return;
+    if (!t || t.div > 3 || isH(t)) { w.send({ t: 'err', m: 'Esse clube não está mais disponível.' }); return; }
+    addHuman(t.id, w.name || 'Convidado');
+    bind(w, t.id);
+  } else if (d.t === 'rpc') {
+    if (w.team == null || !RPC[d.fn] || !G.prof[w.team]) return;
+    let r;
+    try { r = as(w.team, () => RPC[d.fn](...(d.args || []))); } catch (e) { r = 'Ação inválida.'; }
+    if (r === undefined) r = null;
+    if (d.fn === 'takeOver' && r == null) { w.team = d.args[0]; setTimeout(hostCheck, 0); }
+    const sync = typeof r !== 'string' && !NOSYNC.has(d.fn);
+    w.send({ t: 'res', id: d.id, r, sync });
+    if (sync) { bcastNow(); hostRefresh(); } else if (typeof r !== 'string') bcastReady();
+  } else if (d.t === 'bye') hostGone(w);
+}
+function bind(w, id) {
+  w.team = id; PR(id).on = true; PR(id).ready = false;
+  save(); bcastNow(); hostRefresh();
+  if (LIVE && LIVE.net) w.send(liveSnap(id));
+  toast(`${PR(id).coach} entrou na sala (${T(id).name}).`);
+}
+function hostGone(w) {
+  if (!NET.conns.has(w.id)) return;
+  NET.conns.delete(w.id);
+  if (w.team != null && G.prof[w.team]) { PR(w.team).on = false; PR(w.team).ready = false; toast(`${PR(w.team).coach} saiu da sala.`); }
+  bcastReady(); hostRefresh(); hostCheck();
+}
+function hostRefresh() {
+  if (UI.view === 'hub' || UI.view === 'season') render();
+  if (el('netbox')) netBox();
+}
+function bcastNow() {
+  if (!isHost()) return;
+  clearTimeout(NET.bT);
+  const g = JSON.stringify(G);
+  NET.conns.forEach(w => { if (w.team != null) w.send({ t: 'state', me: w.team, g }); });
+}
+function bcastSoon() { if (isHost()) { clearTimeout(NET.bT); NET.bT = setTimeout(bcastNow, 150); } }
+function readyMap() { const o = {}; humans().forEach(t => { o[t.id] = [PR(t.id).ready ? 1 : 0, PR(t.id).on === false ? 0 : 1]; }); return o; }
+function bcastReady() {
+  if (!isHost()) return;
+  const m = readyMap();
+  NET.conns.forEach(w => { if (w.team != null) w.send({ t: 'rdy', m }); });
+  hostRefresh();
+}
+
+const present = () => humans().filter(t => t.id === G.me || connOf(t.id));
+// todos os técnicos presentes estão prontos? então a sala anda: 2º tempo, próxima data ou próxima temporada
+function hostCheck() {
+  if (!isHost()) return;
+  if (!present().every(t => PR(t.id).ready && !PR(t.id).fired)) return;
+  if (LIVE && LIVE.net && !LIVE.done) {
+    if (!LIVE.paused) return;
+    humans().forEach(t => { PR(t.id).ready = false; });
+    LIVE.paused = false; LIVE.msg = '';
+    netTick();
+    return;
+  }
+  if (LIVE) LIVE = null;
+  if (G.over) hostRollover(); else hostDay();
+}
+const anyHumanFx = () => humans().some(t => myFx(G.day, t.id));
+function hostSkip() {
+  while (!G.over && !anyHumanFx() && !humans().some(t => PR(t.id).offers.length || PR(t.id).fired)) {
+    dayGroups(G.day).forEach(g => g.fxs.forEach(simMatch));
+    endDay();
+  }
+}
+function hostDay() {
+  const hid = new Set(humans().map(t => t.id)), grps = [];
+  humans().forEach(t => { PR(t.id).ready = false; cleanLineup(t); if (!validXI(t)) autoPick(t); t.bench = t.bench.filter(id => ok(P(id))); });
+  dayGroups(G.day).forEach(g => {
+    if (g.fxs.some(f => hid.has(f.h) || hid.has(f.a))) grps.push({ title: g.title, ms: g.fxs.map(mkMatch) });
+    else g.fxs.forEach(simMatch);
+  });
+  if (!grps.length) { endDay(); hostSkip(); bcastNow(); UI.view = G.over ? 'season' : 'hub'; if (UI.view === 'hub') go('jogos'); else render(); return; }
+  const has = m => m.fx.h === G.me || m.fx.a === G.me, mg = grps.find(g => g.ms.some(has)) || grps[0], mine = mg.ms.find(has) || null;
+  LIVE = { net: true, grps, all: grps.flatMap(g => g.ms), ms: mg.ms, mine, title: mg.title, k: mine ? (mine.fx.h === G.me ? 'h' : 'a') : null, speed: 0, paused: false, skip: false, done: false, msg: '', so: null, sb: null, timer: null, started: true };
+  UI.view = 'live';
+  netTick();
+}
+function netTick() {
+  if (!LIVE || !LIVE.net || LIVE.done || LIVE.paused) return;
+  LIVE.all.forEach(m => {
+    step(m);
+    if (m.needSub) { m.needSub = 0; ['h', 'a'].forEach(k => { if (m[k].human) injSub(m, k, m[k]); }); }
+  });
+  const min = LIVE.all[0].min;
+  if (min === 45) {
+    LIVE.paused = true; LIVE.msg = 'Intervalo. O jogo recomeça quando todos os técnicos presentes estiverem prontos.';
+    humans().forEach(t => { PR(t.id).ready = false; });
+  }
+  if (min >= 90) {
+    LIVE.all.forEach(finish);
+    endDay(); hostSkip();
+    LIVE.done = true; LIVE.msg = '';
+    bcastNow();
+  }
+  NET.conns.forEach(w => { if (w.team != null) w.send(liveSnap(w.team)); });
+  render();
+  if (!LIVE.done && !LIVE.paused) LIVE.timer = setTimeout(netTick, 170);
+}
+function hostRollover() {
+  const jobs = humans().map(t => [t.id, PR(t.id).nextJob]);
+  rollover();
+  jobs.forEach(([id, job]) => {
+    if (job == null || !G.prof[id] || PR(id).fired || as(id, () => takeOver(job))) return;
+    const w = connOf(id);
+    if (w) w.team = job;
+    if (G.me === id) G.me = job;
+  });
+  hostSkip(); save(); bcastNow();
+  UI.view = 'hub'; go('news');
+}
+
+// retrato da rodada ao vivo para o técnico do clube id
+function liveSnap(id) {
+  const L = LIVE, has = m => m.fx.h === id || m.fx.a === id, g = L.grps.find(x => x.ms.some(has)) || L.grps[0], mine = g.ms.find(has);
+  const snap = {
+    t: 'live', title: g.title, min: L.all[0].min, paused: L.paused, done: L.done, msg: L.msg, rdy: readyMap(),
+    ms: g.ms.map(m => ({ h: m.fx.h, a: m.fx.a, gh: m.h.g, ga: m.a.g, last: m.last, agg: m.fx.agg || null, pen: m.fx.pen || null, ko: m.fx.ko, w: m.fx.w == null ? null : m.fx.w, att: m.fx.att || 0, mine: m === mine }))
+  };
+  if (mine) {
+    const k = mine.fx.h === id ? 'h' : 'a', X = mine[k], st = s => ({ sh: s.sh, sot: s.sot, pos: s.pos });
+    const yn = q => [...mine.ycs.keys()].filter(p => mine[q].played.has(p)).length;
+    snap.my = {
+      k, ev: mine.ev, st: { h: st(mine.h), a: st(mine.a) }, yn: { h: yn('h'), a: yn('a') }, subs: X.subs,
+      on: X.on.map(e => [e.p.id, e.role, e.st, Math.round(e.p.en)]), bench: X.bench.map(p => [p.id, Math.round(p.en)]),
+      ycs: [...mine.ycs.keys()].filter(p => X.played.has(p)).map(p => p.id), gl: [...mine.gl].map(([p, n]) => [p.id, n]), played: [...X.played].map(p => p.id)
+    };
+  }
+  return snap;
+}
+
+/* ---------- convidado ---------- */
+
+function guestRecv(d) {
+  if (!isGuest() || !d) return;
+  if (d.t === 'pick') { NET.pick = d.teams; UI.view = 'join'; closeModal(); render(); }
+  else if (d.t === 'err') toast(d.m);
+  else if (d.t === 'state') {
+    G = JSON.parse(d.g); G.me = d.me; PM = null;
+    if (NET.blob) Object.assign(T(G.me), NET.blob); // escalação editada que ainda não chegou ao anfitrião
+    const q = NET.afterQ; NET.afterQ = [];
+    if (UI.view === 'start' || UI.view === 'join') { UI.view = 'hub'; closeModal(); go('elenco'); toast('Você entrou na sala.'); }
+    else if (UI.view === 'season' && !G.over) { UI.view = 'hub'; go('news'); }
+    else if (UI.view === 'live') { if (NET.lastLive) applyLive(NET.lastLive); }
+    else render();
+    q.forEach(f => f());
+  } else if (d.t === 'res') {
+    const cb = NET.pend.get(d.id);
+    NET.pend.delete(d.id);
+    if (!cb) return;
+    if (d.sync) NET.afterQ.push(() => cb(d.r)); else cb(d.r);
+  } else if (d.t === 'rdy') { applyReady(d.m); if (UI.view === 'hub' || UI.view === 'season' || UI.view === 'live') render(); if (el('netbox')) netBox(); }
+  else if (d.t === 'live') { NET.lastLive = d; applyLive(d); }
+}
+function applyReady(m) {
+  Object.keys(m).forEach(id => { const pr = G.prof[id]; if (pr) { pr.ready = !!m[id][0]; pr.on = !!m[id][1]; } });
+}
+function applyLive(s) {
+  if (!G) return;
+  applyReady(s.rdy);
+  const ms = s.ms.map(x => ({
+    fx: { h: x.h, a: x.a, agg: x.agg, pen: x.pen, ko: x.ko, w: x.w, att: x.att }, min: s.min, last: x.last, ev: [], ycs: new Map(), gl: new Map(), red: new Set(),
+    h: { t: T(x.h), g: x.gh, sh: 0, sot: 0, pos: 0, on: [], bench: [], subs: 0, played: new Set() },
+    a: { t: T(x.a), g: x.ga, sh: 0, sot: 0, pos: 0, on: [], bench: [], subs: 0, played: new Set() }
+  }));
+  const i = s.ms.findIndex(x => x.mine), mine = i >= 0 ? ms[i] : null, my = s.my, prev = LIVE && LIVE.remote ? LIVE : null;
+  if (mine && my) {
+    const X = mine[my.k];
+    mine.ev = my.ev; mine.yn = my.yn;
+    Object.assign(mine.h, my.st.h); Object.assign(mine.a, my.st.a);
+    X.on = my.on.map(([pid, role, st, en]) => { const p = P(pid); if (p) p.en = en; return { p, role, st }; }).filter(e => e.p);
+    X.bench = my.bench.map(([pid, en]) => { const p = P(pid); if (p) p.en = en; return p; }).filter(Boolean);
+    X.subs = my.subs;
+    X.played = new Set(my.played.map(P).filter(Boolean));
+    my.ycs.forEach(pid => mine.ycs.set(P(pid), 1));
+    my.gl.forEach(([pid, n]) => mine.gl.set(P(pid), n));
+  }
+  LIVE = { remote: true, ms, mine, title: s.title, k: my ? my.k : null, speed: 0, paused: s.paused, done: s.done, msg: s.msg, so: prev ? prev.so : null, sb: prev ? prev.sb : null, started: true };
+  UI.view = 'live';
+  render();
+}
+
+function netPushTeam() {
+  if (!isGuest()) return;
+  const t = T(G.me), b = NET.blob = { form: t.form, xi: t.xi.slice(), bench: t.bench.slice(), style: t.style, mark: t.mark, train: t.train || 0, ticket: t.ticket };
+  clearTimeout(NET.blobT);
+  NET.blobT = setTimeout(() => act('setTeam', [b], () => { if (NET.blob === b) NET.blob = null; }), 300);
+}
+
+/* ---------- pronto / continuar ---------- */
+
+function netReady(v) {
+  MY().ready = !!v;
+  if (isGuest()) NET.host.send({ t: 'rpc', id: ++NET.rpcId, fn: 'ready', args: [!!v] });
+  else { bcastReady(); hostCheck(); }
+  render();
+}
+function netAfterMatch() {
+  if (LIVE) clearTimeout(LIVE.timer);
+  LIVE = null; NET.lastLive = null;
+  UI.view = G.over ? 'season' : 'hub';
+  if (UI.view === 'hub') go('elenco'); else render();
+}
+function netNextSeason(job) {
+  if (job != null) act('nextJob', [job]);
+  netReady(job != null ? true : !MY().ready);
+}
+
+/* ---------- telas ---------- */
+
+const playLabel = def => !online() ? def : MY().ready ? 'Aguardando os outros técnicos… (cancelar)' : 'Estou pronto';
+function readyChips() {
+  if (!online()) return '';
+  return `<div class="chips" style="margin-top:10px">${humans().map(t => { const pr = PR(t.id); return `<span class="chip ${pr.ready ? 'mine' : ''}" title="${t.name}">${esc(pr.coach)} ${pr.on === false ? '· ausente' : pr.fired ? '· escolhendo clube' : pr.ready ? '✓' : '…'}</span>`; }).join('')}</div>`;
+}
+function netLiveCtl() {
+  const L = LIVE;
+  if (L.done) return '<button class="primary" onclick="afterMatch()">Continuar</button>';
+  if (L.paused) return `<button class="primary" onclick="netReady(${!MY().ready})">${MY().ready ? 'Aguardando os outros técnicos…' : 'Pronto para o 2º tempo'}</button>`;
+  return '<span class="muted">Partida online em andamento</span>';
+}
+// técnico cujo time folga na data: só acompanha os placares
+function vLiveWatch() {
+  const L = LIVE;
+  const games = L.ms.map(x => `<div class="g"><span class="h">${x.h.t.name}</span>${crest(x.h.t, 20)}<b>${x.h.g}</b><span class="muted c">x</span><b>${x.a.g}</b>${crest(x.a.t, 20)}<span>${x.a.t.name}</span><small>${x.fx.pen ? `Pênaltis: ${x.fx.pen[0]} x ${x.fx.pen[1]}` : x.last || ''}</small></div>`).join('');
+  return `<div class="live"><div class="livehead"><div class="clock">${L.done ? 'FIM' : L.ms[0].min + "'"}</div><b>${L.title}</b><span style="margin-left:auto" class="row">${netLiveCtl()}</span></div>
+    <div class="cols2"><div class="panel">${games}</div><div class="panel"><div class="msg">Seu time não joga nesta data. Você está acompanhando os jogos dos outros técnicos da sala.</div>${L.msg ? `<div class="msg">${L.msg}</div>` : ''}${readyChips()}</div></div></div>`;
+}
+
+function vJoin() {
+  const cols = [0, 1, 2, 3].map(d => `<div class="panel"><h3>${DIVS[d]}</h3>${NET.pick.filter(t => t.div === d).map(t =>
+    `<div class="club" onclick="NET.host.send({t:'pick',id:${t.id}})">${crest(t)}<span>${t.name} <span class="muted">${t.uf}</span></span><b>${t.f}</b></div>`).join('')}</div>`).join('');
+  return `<div class="start"><div class="row" style="justify-content:space-between"><div class="logo" style="font-size:28px">Pran<span>cheta</span></div><button onclick="netLeave()">Sair da sala</button></div>
+    <div class="panel" style="margin-top:14px">Sala <b>${esc(NET.code)}</b>: escolha o clube que você vai dirigir. O número é a força média do time titular.</div><div class="pickgrid">${cols}</div></div>`;
+}
+
+function netBox() {
+  let body;
+  if (!online()) {
+    body = `<div>Jogue a mesma liga com amigos pela internet. Quem cria a sala vira o anfitrião: o mundo desta carreira passa a ser compartilhado e fica salvo no seu navegador. Os convidados entram pela tela inicial com o código e escolhem um clube.</div>
+      <ul style="font-size:13px;padding-left:18px"><li>A data só avança quando todos os técnicos presentes clicam em <b>Estou pronto</b>.</li><li>As partidas rolam ao mesmo tempo para todos, com pausa no intervalo.</li><li>O anfitrião precisa manter o jogo aberto; se ele sair, a sala fecha. Para continuar outro dia, ele abre a sala de novo e os amigos entram com o mesmo nome.</li></ul>
+      <div class="row"><button onclick="closeModal()">Fechar</button><button onclick="netCreate(true)" title="Só funciona entre abas deste mesmo navegador; serve para experimentar">Sala de teste neste PC</button><button class="primary" onclick="netCreate(false)">Criar sala</button></div>`;
+  } else {
+    const rows = humans().map(t => { const pr = PR(t.id); return `<tr class="${t.id === G.me ? 'me' : ''}"><td>${esc(pr.coach)}</td><td>${crest(t, 16)} ${t.name}</td><td class="muted">${DIVS[t.div]}</td><td>${pr.on === false ? '<span class="muted">ausente</span>' : pr.ready ? '<span class="up">pronto</span>' : 'na sala'}</td></tr>`; }).join('');
+    body = `<div>${isHost() ? 'Passe este código para os seus amigos:' : 'Você está na sala:'}</div><div class="code">${esc(NET.code)}</div>
+      <table><thead><tr><th>Técnico</th><th>Clube</th><th>Divisão</th><th>Situação</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="row"><button onclick="confirmBox('Sair da sala','${isHost() ? 'Fechar a sala desconecta todos os convidados. O jogo continua salvo com você.' : 'Sair da sala? Seu clube continua no mundo do anfitrião e você pode voltar com o mesmo nome.'}','Sair',()=>netLeave())">${isHost() ? 'Fechar sala' : 'Sair da sala'}</button><button class="primary" onclick="closeModal()">OK</button></div>`;
+  }
+  modal(`<h2 id="netbox">Jogar online</h2>${body}`);
+}
+function netJoinBox() {
+  modal(`<h2>Entrar em uma sala</h2><div class="field" style="grid-template-columns:120px 1fr"><span class="muted">Código da sala</span><input id="jcode" maxlength="12" style="text-transform:uppercase" placeholder="ex.: KXPTR">
+    <span class="muted">Seu nome</span><input id="jname" maxlength="24" placeholder="Técnico"></div>
+    <div class="muted" style="margin-top:8px;font-size:12px">Se você já jogou nessa sala, use o mesmo nome para reassumir o seu clube.</div>
+    <div class="row"><button onclick="closeModal()">Cancelar</button><button class="primary" onclick="netJoin(el('jcode').value, el('jname').value)">Entrar</button></div>`);
+}
+</script>
+<script>
+'use strict';
+// Interface: telas, escalação por clique e partida ao vivo.
+
+const UI = { view: 'start', tab: 'elenco', creating: false, pick: null, coach: '', slot: null, pl: null, div: 0, reg: 0, rd: 0, mk: { pos: '', src: 'all', sale: false, pay: false, q: '' } };
+let LIVE = null, MCB = null, toastT = null;
+const SPEEDS = [260, 110, 35];
+const SHIELD = 'M3 2h18v9c0 6-4 9.5-9 11-5-1.5-9-5-9-11z';
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const num = n => n.toLocaleString('pt-BR');
+const el = id => document.getElementById(id);
+
+function crest(t, s = 20) {
+  const a = PAL[t.c1], b = PAL[t.c2];
+  const pat = [
+    `<rect x="9" width="6" height="24" fill="${b}"/>`,
+    `<rect y="8" width="24" height="6" fill="${b}"/>`,
+    `<path d="M3 2h6l12 12v6h-4L3 6z" fill="${b}"/>`,
+    `<rect x="12" width="12" height="24" fill="${b}"/>`,
+    `<rect x="6" width="3" height="24" fill="${b}"/><rect x="15" width="3" height="24" fill="${b}"/>`][t.pat];
+  return `<svg class="cr" width="${s}" height="${s}" viewBox="0 0 24 24"><defs><clipPath id="cp${t.id}"><path d="${SHIELD}"/></clipPath></defs>` +
+    `<g clip-path="url(#cp${t.id})"><rect width="24" height="24" fill="${a}"/>${pat}</g><path d="${SHIELD}" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1"/></svg>`;
+}
+const tname = t => `<span class="link" onclick="event.stopPropagation();openTeam(${t.id})">${t.name}</span>`;
+function bar(v) {
+  return `<span class="bar ${v < 50 ? 'low' : v < 75 ? 'mid' : ''}" title="${Math.round(v)}%"><i style="width:${Math.round(v)}%"></i></span>`;
+}
+function moral(v) {
+  return v >= 75 ? '<span class="up">Ótima</span>' : v >= 55 ? 'Boa' : v >= 40 ? '<span class="amber">Regular</span>' : '<span class="down">Baixa</span>';
+}
+const fdelta = p => p.d > 0 ? ' <span class="up">▲</span>' : p.d < 0 ? ' <span class="down">▼</span>' : '';
+const ptags = p => (p.inj ? `<span class="tag inj" title="Lesionado">LES ${p.inj}</span>` : '') + (p.sus ? '<span class="tag sus" title="Suspenso">SUSP</span>' : '') +
+  (p.yc ? `<span class="tag yc" title="Cartões amarelos acumulados">${p.yc}A</span>` : '') + (p.loan ? '<span class="tag loan" title="Emprestado">EMP</span>' : '') +
+  (p.sale ? '<span class="tag sale">À VENDA</span>' : '') + (p.lend ? '<span class="tag sale" title="Disponível para empréstimo">P/ EMPRÉSTIMO</span>' : '');
+const nota = p => p.rn ? (p.rs / p.rn).toFixed(1) : '–';
+const divName = t => t.div < 4 ? `${DIVS[t.div]}, ${posOf(t)}º` : `Exterior (${t.uf})`;
+const myH = h => MY().hist.find(x => x.s === h.s) || {};
+const campTxt = h => { const m = myH(h); return m.div == null ? '—' : `${DIVS[m.div]}, ${m.pos}º`; };
+const posTag = k => `<span class="pos ${k}">${POSN[k]}</span>`;
+const fxRow = fx => `<div class="fx ${fx.h === G.me || fx.a === G.me ? 'me' : ''}"><span class="h">${tname(T(fx.h))} ${crest(T(fx.h), 16)}</span>
+  <span class="sc">${scoreStr(fx)}</span><span>${crest(T(fx.a), 16)} ${tname(T(fx.a))}</span></div>`;
+
+function toast(msg) {
+  const t = el('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toastT); toastT = setTimeout(() => { t.style.display = 'none'; }, 3200);
+}
+function modal(html, wide) {
+  el('modal').innerHTML = `<div class="box ${wide ? 'wide' : ''}">${html}</div>`;
+  el('modal').classList.add('show');
+}
+function closeModal() { el('modal').classList.remove('show'); el('modal').innerHTML = ''; }
+function confirmBox(title, msg, yes, cb) {
+  MCB = cb;
+  modal(`<h2>${title}</h2><div>${msg}</div><div class="row"><button onclick="closeModal()">Cancelar</button><button class="primary" onclick="closeModal();MCB()">${yes}</button></div>`);
+}
+function alertBox(title, msg) {
+  modal(`<h2>${title}</h2><div>${msg}</div><div class="row"><button class="primary" onclick="closeModal()">OK</button></div>`);
+}
+
+function render() {
+  el('app').innerHTML = UI.view === 'start' ? vStart() : UI.view === 'join' ? vJoin() : UI.view === 'live' ? vLive() : MY().fired ? vFired() : UI.view === 'season' ? vSeason() : vHub();
+}
+function go(tab) {
+  UI.tab = tab; UI.slot = UI.pl = null;
+  if (tab === 'news') MY().unread = 0;
+  if (tab === 'tabela') { UI.div = T(G.me).div; UI.reg = regOf(T(G.me)); }
+  if (tab === 'jogos') UI.rd = clamp(G.day - 1, 0, G.cal.length - 1);
+  render();
+}
+
+/* ---------- início ---------- */
+
+function vStart() {
+  if (!UI.creating) {
+    return `<div class="start"><div class="hero"><div class="logo">Pran<span>cheta</span></div>
+      <p>Manager de futebol brasileiro com clubes fictícios. Monte a escalação, defina a tática e leve seu time da Série D ao título da Série A.</p>
+      <div class="row">${hasSave() ? '<button class="primary" onclick="continueGame()">Continuar carreira</button>' : ''}
+      <button class="${hasSave() ? '' : 'primary'}" onclick="newGameScreen()">Novo jogo</button>
+      <button onclick="netJoinBox()">Entrar em sala online</button>
+      <button onclick="el('imp').click()">Importar jogo salvo</button><input id="imp" type="file" accept=".json,application/json" style="display:none" onchange="importSave(this.files[0])"></div></div></div>`;
+  }
+  const cols = [0, 1, 2, 3].map(d => `<div class="panel"><h3>${DIVS[d]}</h3>${G.teams.filter(t => t.div === d).map(t =>
+    `<div class="club ${UI.pick === t.id ? 'sel' : ''}" onclick="UI.pick=${t.id};render()">${crest(t)}<span>${t.name} <span class="muted">${t.uf}</span></span><b title="Força média dos 11 melhores">${Math.round(top11(t))}</b></div>`).join('')}</div>`).join('');
+  const pk = UI.pick != null ? T(UI.pick) : null;
+  return `<div class="start"><div class="row" style="justify-content:space-between"><div class="logo" style="font-size:28px">Pran<span>cheta</span></div>
+    <button onclick="UI.creating=false;render()">Voltar</button></div>
+    <div class="panel" style="margin-top:14px"><div class="row">
+      <label>Seu nome: <input id="coach" maxlength="24" value="${esc(UI.coach)}" oninput="UI.coach=this.value" placeholder="Técnico"></label>
+      <span class="muted">${pk ? `Time escolhido: <b style="color:var(--text)">${pk.name}</b> · ${DIVS[pk.div]} · ${REGS[regOf(pk)].n} · ${pk.std} (${num(pk.cap)} lugares) · caixa ${$$(pk.cash)}` : 'Escolha um clube abaixo. O número é a força média do time titular.'}</span>
+      <button class="primary" style="margin-left:auto" ${pk ? '' : 'disabled'} onclick="startGame()">Começar</button></div></div>
+    <div class="pickgrid">${cols}</div></div>`;
+}
+function newGameScreen() {
+  const mk = () => { newWorld(); UI.creating = true; UI.pick = null; render(); };
+  if (hasSave()) confirmBox('Novo jogo', 'Começar um novo jogo vai substituir a carreira salva quando você escolher um time. Continuar?', 'Novo jogo', mk); else mk();
+}
+function startGame() {
+  G.me = UI.pick;
+  addHuman(G.me, (UI.coach || '').trim() || 'Técnico');
+  skipByes(); save();
+  UI.creating = false; UI.view = 'hub'; go('elenco');
+}
+function continueGame() {
+  if (!load() || G.me == null) { toast('Não foi possível carregar o jogo salvo.'); return; }
+  UI.view = 'hub'; go('elenco');
+}
+
+/* ---------- hub ---------- */
+
+function vHub() {
+  const me = T(G.me), pos = posOf(me);
+  const tabs = [['elenco', 'Elenco e tática'], ['tabela', 'Competições'], ['jogos', 'Jogos'], ['mercado', 'Transferências'], ['base', 'Base e treino'], ['fin', 'Finanças e estádio'], ['carreira', 'Carreira'], ['news', 'Notícias']];
+  const body = { elenco: vElenco, tabela: vTabela, jogos: vJogos, mercado: vMercado, base: vBase, fin: vFin, carreira: vCarreira, news: vNews }[UI.tab]();
+  return `<div class="top">${crest(me, 38)}<div><div class="name">${me.name}</div><div class="muted">Técnico ${esc(MY().coach)} · ${DIVS[me.div]} · ${pos}º lugar</div></div>
+    <div class="stat"><small>Temporada</small><b>${G.season}</b></div>
+    <div class="stat"><small>Data</small><b>${Math.min(G.day + 1, G.cal.length)}/${G.cal.length}</b></div>
+    <div class="stat"><small>Caixa</small><b class="${me.cash < 0 ? 'down' : ''}">${$$(me.cash)}</b></div>
+    <div class="stat"><button onclick="toast(save()?'Jogo salvo.':'Não foi possível salvar.')">Salvar</button> <button onclick="exportSave()" title="Baixa a carreira em um arquivo, para guardar ou levar a outro computador">Exportar</button> <button class="${online() ? 'on' : ''}" onclick="netBox()">Online${online() ? ' · ' + NET.code : ''}</button> <button onclick="helpBox()">Ajuda</button> <button onclick="exitGame()">Sair</button></div></div>
+    <div class="tabs">${tabs.map(([k, n]) => `<button class="${UI.tab === k ? 'on' : ''}" onclick="go('${k}')">${n}${k === 'news' && MY().unread ? `<span class="badge">${MY().unread}</span>` : ''}${k === 'mercado' && MY().offers.length ? `<span class="badge">${MY().offers.length}</span>` : ''}</button>`).join('')}</div>
+    <div class="main">${body}</div>`;
+}
+function exitGame() { save(); netLeave(); UI.view = 'start'; UI.creating = false; render(); }
+
+/* ---------- elenco e tática ---------- */
+
+function vElenco() {
+  const t = T(G.me); cleanLineup(t);
+  const slots = FORMS[t.form];
+  const ps = t.players.slice().sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos] || b.f - a.f);
+  const rows = ps.map(p => {
+    const inXI = t.xi.includes(p.id), inB = t.bench.includes(p.id);
+    const ct = p.loan ? '<span class="muted">empréstimo</span>' : `<span class="${p.ce <= G.season ? 'amber' : ''}" title="${p.ce <= G.season ? 'Termina no fim desta temporada' : ''}">${p.ce}</span>`;
+    return `<tr class="${UI.pl === p.id ? 'sel' : ''} ${ok(p) ? '' : 'out'}" onclick="selPlayer(${p.id})" draggable="true" ondragstart="event.dataTransfer.setData('text','${p.id}')">
+      <td>${inXI ? '<span class="st T" title="Titular">T</span>' : inB ? '<span class="st R" title="Reserva">R</span>' : ''}</td>
+      <td>${posTag(p.pos)}</td><td>${p.n}${ptags(p)}</td><td class="c">${p.age}</td>
+      <td class="f">${p.f}${fdelta(p)}</td><td class="tr">${p.tr.join(', ')}</td><td>${bar(p.en)}</td><td>${moral(p.mo)}</td>
+      <td class="c">${p.gp}</td><td class="c">${p.g + (p.go || 0)}</td><td class="c">${nota(p)}</td><td class="r">${$$(p.sal)}</td><td class="c">${ct}</td><td class="r">${$$(value(p))}</td>
+      <td><button class="mini ${inB ? 'on warn' : ''}" title="Colocar/tirar do banco" onclick="event.stopPropagation();toggleBench(${p.id})">Banco</button>
+      <button class="mini" title="Contrato, venda, empréstimo e dispensa" onclick="event.stopPropagation();playerMenu(${p.id})">Opções</button></td></tr>`;
+  }).join('');
+
+  const light = c => LIGHT.includes(c);
+  const pitch = slots.map((s, i) => {
+    const p = P(t.xi[i]);
+    return `<div class="slot ${UI.slot === i ? 'sel' : ''} ${p ? '' : 'empty'}" style="left:${s[1]}%;top:${s[2]}%" onclick="selSlot(${i})" draggable="true" ondragstart="event.dataTransfer.setData('text','s${i}')" ondragover="event.preventDefault()" ondrop="event.preventDefault();dropOn(${i},event.dataTransfer.getData('text'))">
+      <div class="shirt" style="background:${PAL[t.c1]};border-color:${PAL[t.c2]};color:${light(t.c1) ? '#111' : '#fff'}">${p ? p.f : '+'}</div>
+      <div class="sn ${p && p.pos !== s[0] ? 'imp' : ''}">${p ? p.n : 'vazio'}</div><div class="sr">${POSN[s[0]]}</div></div>`;
+  }).join('');
+
+  let next;
+  if (G.over) next = `<div class="next"><div class="vs">Temporada encerrada</div></div><button class="primary big" onclick="UI.view='season';render()">Ver resumo da temporada</button>`;
+  else {
+    const m = myFx(G.day);
+    if (m) {
+      const fx = m.fx, home = fx.h === t.id, op = T(home ? fx.a : fx.h);
+      next = `<h3>Próximo jogo · ${m.g.title}</h3><div class="next">${crest(op, 34)}<div><div class="vs">${tname(op)}</div>
+        <div class="muted">${home ? 'Em casa' : 'Fora de casa'} · ${divName(op)} · força ${Math.round(top11(op))} · ${op.form}</div>
+        ${fx.agg ? `<div class="amber">Jogo de ida: ${T(fx.h).name} ${fx.agg[0]} x ${fx.agg[1]} ${T(fx.a).name}</div>` : ''}</div></div>
+        <button class="primary big" onclick="startRound()">${playLabel('Jogar')}</button>`;
+    } else {
+      next = `<h3>${dayName(G.day)}</h3><div class="next"><div><div class="vs">Sem jogo para o ${t.name}</div><div class="muted">Seu time folga nesta data; os outros jogos serão simulados.</div></div></div>
+        <button class="primary big" onclick="startRound()">${playLabel('Avançar data')}</button>`;
+    }
+  }
+  const sel = (k, opts, cur) => `<select onchange="setTac('${k}',this.value)">${opts.map(([v, n]) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${n}</option>`).join('')}</select>`;
+  const bench = t.bench.map(P);
+  const away = G.teams.filter(x => x !== t).flatMap(x => x.players.filter(p => p.loan && p.loan.from === t.id).map(p => `<span class="chip">${POSN[p.pos]} ${p.n} ${p.f} · ${x.name}</span>`));
+
+  return `<div class="cols"><div class="panel scroll"><table class="squad"><thead><tr><th></th><th>Pos</th><th>Jogador</th><th class="c">Idade</th><th>Força</th><th>Características</th>
+      <th>Energia</th><th>Moral</th><th class="c">J</th><th class="c">G</th><th class="c" title="Nota média na temporada">Nota</th><th class="r">Salário</th><th class="c">Contrato</th><th class="r">Valor</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+      ${away.length ? `<div class="chips"><span class="muted" style="font-size:12px">Emprestados a outros clubes:</span>${away.join('')}</div>` : ''}
+      <div class="muted" style="margin-top:8px;font-size:12px">Para escalar: arraste o jogador até a camisa no campo, ou clique no jogador e depois na camisa. Arraste uma camisa sobre outra para trocar de posição. Nome em amarelo no campo = jogador improvisado. Salários são pagos a cada data do calendário. Contrato em amarelo termina no fim desta temporada.</div></div>
+    <div class="grid"><div class="panel">${next}${readyChips()}</div>
+      <div class="panel"><div class="pitch">${pitch}</div>
+        <div class="chips"><span class="muted" style="font-size:12px">Banco (${bench.length}/7):</span>${bench.map(p => `<span class="chip">${POSN[p.pos]} ${p.n} ${p.f}</span>`).join('') || '<span class="muted" style="font-size:12px">vazio</span>'}</div>
+        <div class="field"><span class="muted">Formação</span>${sel('form', Object.keys(FORMS).map(k => [k, k]), t.form)}
+          <span class="muted">Estilo</span>${sel('style', STYLE.map((s, i) => [i, s.n]), t.style)}
+          <span class="muted">Marcação</span>${sel('mark', MARK.map((s, i) => [i, s.n]), t.mark)}
+          <span class="muted">Treino</span>${sel('train', TRAIN.map((s, i) => [i, s.n]), t.train || 0)}</div>
+        <button style="width:100%;margin-top:10px" onclick="autoBtn()">Escalar automaticamente</button></div></div></div>`;
+}
+
+function assign(pid, slot) {
+  const t = T(G.me), p = P(pid);
+  if (!ok(p)) { toast(`${p.n} está ${p.inj ? 'lesionado' : 'suspenso'} e não pode ser escalado.`); return; }
+  const from = t.xi.indexOf(pid), prev = t.xi[slot];
+  if (from >= 0) t.xi[from] = prev;
+  else if (prev != null && t.bench.length < 7) t.bench.push(prev);
+  t.xi[slot] = pid;
+  t.bench = t.bench.filter(id => id !== pid);
+  UI.slot = UI.pl = null;
+}
+function autoBtn() { autoPick(T(G.me)); UI.slot = UI.pl = null; netPushTeam(); render(); }
+function selPlayer(pid) {
+  if (UI.slot != null) { assign(pid, UI.slot); netPushTeam(); }
+  else UI.pl = UI.pl === pid ? null : pid;
+  render();
+}
+function selSlot(i) {
+  const t = T(G.me);
+  if (UI.pl != null) assign(UI.pl, i);
+  else if (UI.slot != null && UI.slot !== i) { [t.xi[UI.slot], t.xi[i]] = [t.xi[i], t.xi[UI.slot]]; UI.slot = null; }
+  else UI.slot = UI.slot === i ? null : i;
+  netPushTeam(); render();
+}
+function dropOn(i, d) {
+  const t = T(G.me);
+  UI.slot = UI.pl = null;
+  if (d[0] === 's') { const j = +d.slice(1); if (j !== i) [t.xi[j], t.xi[i]] = [t.xi[i], t.xi[j]]; }
+  else if (P(+d)) assign(+d, i);
+  netPushTeam(); render();
+}
+function toggleBench(pid) {
+  const t = T(G.me), p = P(pid);
+  if (t.bench.includes(pid)) t.bench = t.bench.filter(id => id !== pid);
+  else if (t.xi.includes(pid)) toast('Esse jogador já é titular.');
+  else if (!ok(p)) toast(`${p.n} não está disponível.`);
+  else if (t.bench.length >= 7) toast('O banco já tem 7 jogadores.');
+  else t.bench.push(pid);
+  netPushTeam(); render();
+}
+function setTac(k, v) {
+  const t = T(G.me);
+  if (k === 'form') { t.form = v; autoPick(t); UI.slot = UI.pl = null; } else t[k] = +v;
+  netPushTeam(); render();
+}
+
+function playerMenu(pid) {
+  const p = P(pid);
+  const head = `<h2>${posTag(p.pos)} ${p.n}</h2><div class="muted">${p.age} anos · força ${p.f} · ${p.tr.join(', ')}</div>
+    <div class="kpi" style="margin:12px 0"><div><small>Salário por data</small><b>${$$(p.sal)}</b></div><div><small>Contrato</small><b>${p.loan ? 'Empréstimo' : 'até ' + p.ce}</b></div><div><small>Valor de mercado</small><b>${$$(value(p))}</b></div></div>`;
+  if (p.loan) { modal(`${head}<div>Emprestado pelo ${T(p.loan.from).name}. Ele volta ao clube de origem no fim da temporada.</div><div class="row"><button class="primary" onclick="closeModal()">Fechar</button></div>`); return; }
+  const yrs = (p.age >= 33 ? [1] : [1, 2, 3]).map(y => `<option value="${G.season + y}">até o fim de ${G.season + y}</option>`).join('');
+  modal(`${head}
+    <h3>Renovar contrato</h3><div class="row"><select id="rnce">${yrs}</select><span>por <b>${$$(renewAsk(p))}</b> por data</span>
+      <button class="primary" style="margin-left:auto" onclick="doRenew(${pid})">Renovar</button></div>
+    <h3 style="margin-top:16px">Mercado</h3><div class="row">
+      <button class="${p.sale ? 'on' : ''}" onclick="toggleFlag(${pid},'sale')">${p.sale ? 'Tirar da lista de venda' : 'Colocar à venda'}</button>
+      <button class="${p.lend ? 'on' : ''}" onclick="toggleFlag(${pid},'lend')">${p.lend ? 'Tirar da lista de empréstimo' : 'Oferecer por empréstimo'}</button>
+      <button style="margin-left:auto" onclick="askRelease(${pid})">Dispensar (${$$(releaseFee(p))})</button></div>
+    <div class="muted" style="margin-top:10px;font-size:12px">Propostas de compra e de empréstimo chegam depois dos jogos. No empréstimo o outro clube paga o salário e o jogador volta no fim da temporada, em geral mais forte se for jovem.</div>
+    <div class="row"><button onclick="closeModal()">Fechar</button></div>`);
+}
+function toggleFlag(pid, k) { act('setFlag', [pid, k, P(pid)[k] ? 0 : 1], () => { render(); if (P(pid)) playerMenu(pid); }); }
+function doRenew(pid) {
+  const p = P(pid), ce = +el('rnce').value, nm = p.n;
+  act('renew', [pid, ce, renewAsk(p)], e => {
+    if (e) alertBox('Sem acordo', e); else { closeModal(); toast(`${nm} renovou até ${ce}.`); }
+    render();
+  });
+}
+function askRelease(pid) {
+  const p = P(pid);
+  confirmBox('Dispensar jogador', `Dispensar <b>${p.n}</b>? Você paga uma rescisão de ${$$(releaseFee(p))} e ele fica livre no mercado.`, 'Dispensar', () => act('release', [pid], e => { if (e) toast(e); render(); }));
+}
+
+/* ---------- competições / jogos ---------- */
+
+function vTabela() {
+  const d = UI.div, me = T(G.me);
+  const btns = `<div class="row" style="margin-bottom:10px">${DIVS.map((n, i) => `<button class="${d === i ? 'on' : ''}" onclick="UI.div=${i};render()">${n}</button>`).join('')}
+    <button class="${d === 'cup' ? 'on' : ''}" onclick="UI.div='cup';render()">Copa do Brasil</button><button class="${d === 'am' ? 'on' : ''}" onclick="UI.div='am';render()">${AM_NAME}</button><button class="${d === 'reg' ? 'on' : ''}" onclick="UI.div='reg';render()">Regionais</button></div>`;
+  const tbl = (tb, zone) => `<table><thead><tr><th>#</th><th>Clube</th><th class="c">Pts</th><th class="c">J</th><th class="c">V</th><th class="c">E</th><th class="c">D</th>
+    <th class="c">GP</th><th class="c">GC</th><th class="c">SG</th></tr></thead><tbody>${tb.map((r, i) => `<tr class="${zone(i)} ${r.t.id === G.me ? 'me' : ''}"><td>${i + 1}</td><td>${crest(r.t, 18)} ${tname(r.t)}</td><td class="c"><b>${r.pts}</b></td><td class="c">${r.j}</td>
+      <td class="c">${r.v}</td><td class="c">${r.e}</td><td class="c">${r.d}</td><td class="c">${r.gp}</td><td class="c">${r.gc}</td><td class="c">${r.gp - r.gc}</td></tr>`).join('')}</tbody></table>`;
+  const hist = G.hist.slice().reverse().map(h => `<tr><td>${h.s}</td><td>${h.ch[0]}</td><td>${h.cup || ''}</td><td class="muted">${campTxt(h)}</td></tr>`).join('');
+  const side = `${MY().titles.length ? `<div class="panel"><h3>Títulos do ${me.name}</h3>${MY().titles.map(x => `<div>🏆 ${x}</div>`).join('')}</div>` : ''}
+    ${hist ? `<div class="panel scroll"><h3>Histórico</h3><table><thead><tr><th>Ano</th><th>Série A</th><th>Copa do Brasil</th><th>Sua campanha</th></tr></thead><tbody>${hist}</tbody></table></div>` : ''}`;
+
+  if (d === 'am') {
+    const how = `<div class="panel"><h3>Como funciona</h3><div class="muted" style="font-size:13px">Disputam a ${AM_NAME} os 5 primeiros da Série A do ano anterior, o campeão da Copa do Brasil e 10 clubes de outros países. São 4 grupos de 4, em ida e volta; os 2 melhores de cada grupo vão às quartas. Quartas e semifinais em ida e volta, final em jogo único, com pênaltis em caso de empate. Premiação: ${$$(AM_PRIZE.start)} pela participação e ${$$(AM_PRIZE.champ)} para o campeão.</div></div>`;
+    if (!G.am) return `${btns}<div class="cols"><div class="panel">A ${AM_NAME} começa a ser disputada na próxima temporada.</div><div class="grid">${how}</div></div>`;
+    const ko = G.am.ko.map((ties, i) => `<div class="panel"><h3>${['Quartas de final', 'Semifinais', 'Final'][i]}</h3>${ties.map(tieRow).join('')}</div>`).reverse().join('');
+    const grp = G.am.groups.map((g, k) => `<div class="panel scroll"><h3>Grupo ${'ABCD'[k]}</h3>${tbl(amTable(g), i => i < 2 ? 'zone-u' : '')}</div>`).join('');
+    return `${btns}<div class="cols"><div class="grid">${G.am.champ != null ? `<div class="panel"><div class="row">${crest(T(G.am.champ), 34)}<div><b>${T(G.am.champ).name}</b><div class="muted">Campeão da ${AM_NAME} ${G.season}</div></div></div></div>` : ''}${ko}${grp}</div>
+      <div class="grid">${how}${side}</div></div>`;
+  }
+  if (d === 'cup') {
+    const phases = G.cup.ph.map((ties, ph) => `<div class="panel"><h3>${CUP[ph].n} · ${CUP[ph].legs === 2 ? 'ida e volta' : 'jogo único'} · ${$$(CUP[ph].prize)} para quem avança</h3>${ties.map(t => {
+      const f = t.legs[0], g = t.legs[1], a = T(f.h), b = T(f.a), mine = f.h === G.me || f.a === G.me;
+      const sc = f.gh == null ? 'x' : CUP[ph].legs === 1 ? scoreStr(f) : `${f.gh} x ${f.ga}` + (g.gh != null ? ` · ${g.ga} x ${g.gh}` + (g.pen ? ` (${g.pen[1]}-${g.pen[0]} pên.)` : '') : '');
+      const w = id => t.w === id ? 'style="font-weight:700"' : t.w != null ? 'class="muted"' : '';
+      return `<div class="fx ${mine ? 'me' : ''}"><span class="h"><span ${w(a.id)}>${tname(a)}</span> ${crest(a, 16)}</span><span class="sc">${sc}</span><span>${crest(b, 16)} <span ${w(b.id)}>${tname(b)}</span></span></div>`;
+    }).join('')}</div>`).reverse().join('');
+    return `${btns}<div class="cols"><div class="grid">${G.sc ? `<div class="panel"><h3>Supercopa do Brasil ${G.season} · campeão da Série A x campeão da Copa</h3>${fxRow(G.sc.fx)}</div>` : ''}${G.cup.champ != null ? `<div class="panel"><div class="row">${crest(T(G.cup.champ), 34)}<div><b>${T(G.cup.champ).name}</b><div class="muted">Campeão da Copa do Brasil ${G.season}</div></div></div></div>` : ''}${phases}</div>
+      <div class="grid"><div class="panel"><h3>Como funciona</h3><div class="muted" style="font-size:13px">Os 80 clubes disputam a Copa em mata-mata, com sorteio a cada fase. Os 32 de pior ranking jogam a 1ª fase; os demais entram na 2ª. Até a 3ª fase é jogo único; das oitavas em diante, ida e volta. Empate no placar agregado é decidido nos pênaltis. A renda dos jogos é dividida entre os dois clubes.</div></div>${side}</div></div>`;
+  }
+  if (d === 'reg') {
+    const k = UI.reg, reg = G.reg[k];
+    const ko = reg.ko.map((fxs, i) => `<h3 style="margin-top:14px">${i ? 'Final' : 'Semifinais'}</h3>${fxs.map(fxRow).join('')}`).join('');
+    return `${btns}<div class="cols"><div class="panel scroll"><div class="row" style="margin-bottom:10px"><select onchange="UI.reg=+this.value;render()">${REGS.map((r, i) => `<option value="${i}" ${i === k ? 'selected' : ''}>${r.n}</option>`).join('')}</select>
+        ${reg.champ != null ? `<span>${crest(T(reg.champ), 18)} <b>${T(reg.champ).name}</b> é o campeão de ${G.season}</span>` : ''}</div>
+        ${tbl(regTable(k), i => i < 4 ? 'zone-u' : '')}<div class="legend"><span><i style="background:var(--grass)"></i>Semifinal</span></div>${ko}</div>
+      <div class="grid"><div class="panel"><h3>Como funciona</h3><div class="muted" style="font-size:13px">Os regionais abrem a temporada. São ${REG_ROUNDS} rodadas em fase de liga: a cada rodada os times enfrentam adversários de campanha parecida que ainda não encontraram. Os 4 primeiros fazem semifinal e final em jogo único, na casa do melhor colocado, com pênaltis em caso de empate.</div></div>${side}</div></div>`;
+  }
+  const tb = table(d);
+  const sc = G.teams.filter(t => t.div === d).flatMap(t => t.players.filter(p => p.g > 0).map(p => ({ p, t }))).sort((a, b) => b.p.g - a.p.g || a.p.gp - b.p.gp).slice(0, 12);
+  return `${btns}<div class="cols"><div class="panel scroll">${tbl(tb, i => i >= 16 && d < 3 ? 'zone-d' : i === 0 && d === 0 ? 'zone-c' : i < 4 && d > 0 ? 'zone-u' : '')}
+      <div class="legend">${d === 0 ? '<span><i style="background:var(--amber)"></i>Campeão</span>' : '<span><i style="background:var(--grass)"></i>Acesso</span>'}${d < 3 ? '<span><i style="background:var(--red)"></i>Rebaixamento</span>' : ''}</div></div>
+    <div class="grid"><div class="panel"><h3>Artilharia · ${DIVS[d]}</h3>${sc.length ? `<table><tbody>${sc.map(x => `<tr class="${x.t.id === G.me ? 'me' : ''}"><td>${x.p.n}</td><td class="muted">${x.t.name}</td><td class="r"><b>${x.p.g}</b></td></tr>`).join('')}</tbody></table>` : '<div class="muted">Nenhum gol marcado ainda.</div>'}</div>
+      ${side}</div></div>`;
+}
+
+function tieRow(t) {
+  const f = t.legs[0], g = t.legs[1], a = T(f.h), b = T(f.a), mine = f.h === G.me || f.a === G.me;
+  const sc = f.gh == null ? 'x' : !g ? scoreStr(f) : `${f.gh} x ${f.ga}` + (g.gh != null ? ` · ${g.ga} x ${g.gh}` + (g.pen ? ` (${g.pen[1]}-${g.pen[0]} pên.)` : '') : '');
+  const w = id => t.w === id ? 'style="font-weight:700"' : t.w != null ? 'class="muted"' : '';
+  return `<div class="fx ${mine ? 'me' : ''}"><span class="h"><span ${w(a.id)}>${tname(a)}</span> ${crest(a, 16)}</span><span class="sc">${sc}</span><span>${crest(b, 16)} <span ${w(b.id)}>${tname(b)}</span></span></div>`;
+}
+
+// o time ainda pode ter jogo numa data futura de mata-mata que não foi sorteada?
+function stillIn(di) {
+  const d = G.cal[di], me = G.me;
+  if (d.t === 'S') return false;
+  if (d.t === 'A') {
+    if (!G.am || !G.am.ids.includes(me)) return false;
+    if (!G.am.ko.length) return true;
+    const last = G.am.ko[G.am.ko.length - 1].find(t => t.legs[0].h === me || t.legs[0].a === me);
+    return !!last && (last.w == null || last.w === me) && d.i > [7, 9, 10][G.am.ko.length - 1];
+  }
+  if (d.t === 'C') return !G.cup.ph.some(ties => ties.some(t => t.w != null && t.w !== me && (t.legs[0].h === me || t.legs[0].a === me)));
+  const ko = G.reg[regOf(T(me))].ko;
+  if (!ko.length) return true;
+  const semi = ko[0].find(f => f.h === me || f.a === me);
+  return !!semi && d.i === REG_ROUNDS + 1 && ko.length === 1 && (semi.w == null || semi.w === me);
+}
+function vJogos() {
+  const me = T(G.me), rd = UI.rd;
+  const mine = G.cal.map((_, di) => {
+    const m = myFx(di);
+    if (!m) return di >= G.day && G.cal[di].t !== 'L' && stillIn(di) ? `<tr><td class="muted">${dayName(di)}</td><td></td><td class="muted">a definir</td><td></td></tr>` : '';
+    const fx = m.fx, home = fx.h === me.id, op = T(home ? fx.a : fx.h);
+    let res = '';
+    if (fx.gh != null) {
+      const s = fx.w != null && fx.c !== 'L' && !fx.agg && fx.pen ? (fx.w === me.id ? 1 : -1) : Math.sign((home ? 1 : -1) * (fx.gh - fx.ga));
+      const k = s > 0 ? 'V' : s < 0 ? 'D' : 'E';
+      res = `<span class="res ${k}">${k}</span> ${scoreStr(fx)}`;
+    }
+    return `<tr class="${di === G.day ? 'me' : ''}" style="cursor:pointer" onclick="UI.rd=${di};render()"><td>${dayName(di)}</td><td>${home ? 'Casa' : 'Fora'}</td><td>${crest(op, 16)} ${tname(op)}</td><td>${res}</td></tr>`;
+  }).join('');
+  const groups = dayGroups(rd).slice().sort((a, b) => b.fxs.some(f => f.h === G.me || f.a === G.me) - a.fxs.some(f => f.h === G.me || f.a === G.me));
+  const list = groups.map(g => `<h3 style="margin-top:14px">${g.title}</h3>${g.fxs.map(fxRow).join('') || '<div class="muted">Confrontos ainda não definidos.</div>'}`).join('');
+  return `<div class="cols2"><div class="panel scroll"><h3>Calendário do ${me.name}</h3><table><thead><tr><th>Data</th><th>Local</th><th>Adversário</th><th>Resultado</th></tr></thead><tbody>${mine}</tbody></table></div>
+    <div class="panel"><div class="row" style="justify-content:space-between"><button ${rd <= 0 ? 'disabled' : ''} onclick="UI.rd--;render()">‹ Anterior</button>
+      <b>${dayName(rd)}${rd === G.day && !G.over ? ' (próxima)' : ''}</b><button ${rd >= G.cal.length - 1 ? 'disabled' : ''} onclick="UI.rd++;render()">Próxima ›</button></div>${list}</div></div>`;
+}
+
+function openTeam(id) {
+  const t = T(id), mine = id === G.me;
+  const ps = t.players.slice().sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos] || b.f - a.f);
+  modal(`<h2>${crest(t, 30)} ${t.name} <span class="muted" style="font-weight:400;font-size:13px">${t.div < 4 ? t.uf + ' · ' : ''}${divName(t)}</span></h2>
+    <div class="muted" style="margin-bottom:8px">${t.std} · ${num(t.cap)} lugares · formação ${t.form} · força ${Math.round(top11(t))}</div>
+    <div class="scroll"><table><thead><tr><th>Pos</th><th>Jogador</th><th class="c">Idade</th><th>Força</th><th>Características</th><th class="c">J</th><th class="c">G</th><th class="r">Valor</th><th></th></tr></thead><tbody>
+    ${ps.map(p => `<tr><td>${posTag(p.pos)}</td><td>${p.n}${ptags(p)}</td><td class="c">${p.age}</td><td class="f">${p.f}</td><td class="tr">${p.tr.join(', ')}</td>
+      <td class="c">${p.gp}</td><td class="c">${p.g + (p.go || 0)}</td><td class="r">${$$(value(p))}</td><td>${mine ? '' : `<button class="mini" onclick="openOffer(${p.id})">Proposta</button>`}</td></tr>`).join('')}</tbody></table></div>
+    <div class="row"><button onclick="closeModal()">Fechar</button></div>`, true);
+}
+
+/* ---------- transferências ---------- */
+
+function vMercado() {
+  const me = T(G.me), f = UI.mk;
+  const offers = MY().offers.map((o, i) => { const p = P(o.pid); return `<tr><td>${posTag(p.pos)}</td><td>${p.n}</td><td class="f">${p.f}</td><td>${tname(T(o.from))}</td>
+    <td class="r">${$$(value(p))}</td><td class="r"><b>${o.loan ? 'Empréstimo até o fim da temporada' : $$(o.amt)}</b></td><td><button class="mini primary" onclick="doAccept(${i})">Aceitar</button> <button class="mini" onclick="rejectOffer(${i})">Recusar</button></td></tr>`; }).join('');
+  let list = [];
+  if (f.src !== 'free') G.teams.forEach(t => { if (t !== me && (f.src === 'all' || +f.src === t.div)) t.players.forEach(p => list.push({ p, t })); });
+  if (f.src === 'all' || f.src === 'free') G.free.forEach(p => list.push({ p, t: null }));
+  const q = f.q.trim().toLowerCase();
+  list = list.filter(x => (!f.pos || x.p.pos === f.pos) && (!f.sale || x.p.sale || !x.t) && (!q || x.p.n.toLowerCase().includes(q)) &&
+    (!f.pay || (x.t ? value(x.p) : luvas(x.p)) <= me.cash)).sort((a, b) => b.p.f - a.p.f);
+  const total = list.length; list = list.slice(0, 80);
+  const rows = list.map(({ p, t }) => `<tr><td>${posTag(p.pos)}</td><td>${p.n}${ptags(p)}</td><td class="c">${p.age}</td><td class="f">${p.f}</td><td class="tr">${p.tr.join(', ')}</td>
+    <td>${t ? crest(t, 16) + ' ' + tname(t) : '<span class="up">Livre</span>'}</td><td class="r">${$$(value(p))}</td><td class="r">${$$(salOf(p))}</td>
+    <td><button class="mini" onclick="openOffer(${p.id})">${t ? 'Proposta' : 'Contratar'}</button></td></tr>`).join('');
+  const opt = (v, n, cur) => `<option value="${v}" ${String(cur) === String(v) ? 'selected' : ''}>${n}</option>`;
+  return `${offers ? `<div class="panel scroll" style="margin-bottom:14px"><h3>Propostas recebidas (valem só até o próximo jogo)</h3><table><thead><tr><th>Pos</th><th>Jogador</th><th>Força</th><th>Clube interessado</th><th class="r">Valor</th><th class="r">Proposta</th><th></th></tr></thead><tbody>${offers}</tbody></table></div>` : ''}
+    <div class="panel"><div class="row" style="margin-bottom:10px">
+      <select onchange="UI.mk.pos=this.value;render()">${opt('', 'Todas as posições', f.pos)}${Object.keys(POSN).map(k => opt(k, POSN[k], f.pos)).join('')}</select>
+      <select onchange="UI.mk.src=this.value;render()">${opt('all', 'Todos os clubes e livres', f.src)}${DIVS.map((n, d) => opt(d, n, f.src)).join('')}${opt(4, 'Clubes do exterior', f.src)}${opt('free', 'Só jogadores livres', f.src)}</select>
+      <input placeholder="Buscar nome" value="${esc(f.q)}" onchange="UI.mk.q=this.value;render()">
+      <label><input type="checkbox" ${f.sale ? 'checked' : ''} onchange="UI.mk.sale=this.checked;render()"> Só à venda ou livres</label>
+      <label><input type="checkbox" ${f.pay ? 'checked' : ''} onchange="UI.mk.pay=this.checked;render()"> Cabem no caixa</label>
+      <span class="muted" style="margin-left:auto">Caixa: ${$$(me.cash)} · Elenco: ${me.players.length}/${MAX_SQUAD}</span></div>
+      <div class="scroll"><table><thead><tr><th>Pos</th><th>Jogador</th><th class="c">Idade</th><th>Força</th><th>Características</th><th>Clube</th><th class="r">Valor</th><th class="r">Salário</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="muted" style="margin-top:8px;font-size:12px">${total > 80 ? `Mostrando os 80 mais fortes de ${num(total)}. Use os filtros para refinar. ` : ''}Jogadores à venda saem por perto do valor de mercado; titulares custam bem mais. Reservas e jogadores à venda também podem vir por empréstimo. Jogadores muito acima do nível do seu clube recusam a transferência.</div></div>
+    ${G.mkt.length ? `<div class="panel scroll" style="margin-top:14px"><h3>Movimentações do mercado</h3><table><thead><tr><th>Data</th><th>Pos</th><th>Jogador</th><th>Força</th><th>De</th><th>Para</th><th class="r">Valor</th></tr></thead><tbody>${G.mkt.slice(0, 15).map(x => `<tr><td class="muted">${x.d}</td><td>${posTag(x.pos)}</td><td>${x.n}</td><td class="f">${x.f}</td><td>${x.from != null ? tname(T(x.from)) : '<span class="muted">livre</span>'}</td><td>${tname(T(x.to))}</td><td class="r">${$$(x.amt)}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
+}
+function openOffer(pid) {
+  const me = T(G.me), p = P(pid), t = teamOf(pid);
+  const yrs = `<select id="ce">${[0, 1, 2].map(y => `<option value="${G.season + y}" ${y === 1 ? 'selected' : ''}>até o fim de ${G.season + y}</option>`).join('')}</select>`;
+  const head = `<h2>${posTag(p.pos)} ${p.n}</h2><div class="muted">${p.age} anos · força ${p.f} · ${p.tr.join(', ')} · ${t ? t.name : 'sem clube'}</div>
+    <div class="kpi" style="margin:12px 0"><div><small>Valor de mercado</small><b>${$$(value(p))}</b></div><div><small>Salário por data</small><b>${$$(salOf(p))}</b></div><div><small>Seu caixa</small><b>${$$(me.cash)}</b></div></div>`;
+  if (!t) modal(`${head}<div class="row">Jogador livre: você paga apenas as luvas de <b>${$$(luvas(p))}</b>. Contrato ${yrs}</div>
+    <div class="row"><button onclick="closeModal()">Cancelar</button><button class="primary" onclick="doBuy(${pid},0)">Contratar</button></div>`);
+  else modal(`${head}<div class="row"><label>Sua proposta (R$): <input id="amt" type="number" min="0" step="10000" value="${nice(value(p) * (p.sale ? 1.05 : 1.2))}" style="width:150px"></label><span>Contrato ${yrs}</span></div>
+    <div class="row"><button onclick="closeModal()">Cancelar</button><button onclick="doLoan(${pid})" title="Até o fim da temporada; você paga o salário">Pedir empréstimo (${$$(loanFee(p))})</button>
+      <button class="primary" onclick="doBuy(${pid},+el('amt').value)">Enviar proposta</button></div>`);
+}
+function doBuy(pid, amt) {
+  const nm = P(pid).n;
+  act('tryBuy', [pid, amt, +el('ce').value], err => {
+    if (err) alertBox('Negócio não fechado', err); else { closeModal(); toast(`${nm} contratado!`); }
+    render();
+  });
+}
+function doLoan(pid) {
+  const nm = P(pid).n;
+  act('tryLoan', [pid], err => {
+    if (err) alertBox('Empréstimo recusado', err); else { closeModal(); toast(`${nm} chega por empréstimo!`); }
+    render();
+  });
+}
+function doAccept(i) { act('acceptOffer', [i], e => { if (e) toast(e); render(); }); }
+function rejectOffer(i) { act('rejectOffer', [i], () => render()); }
+
+/* ---------- base e treino ---------- */
+
+function vBase() {
+  const me = T(G.me), cur = me.train || 0;
+  const rows = MY().youth.slice().sort((a, b) => b.cpe - a.cpe).map(j => `<tr><td>${posTag(j.pos)}</td><td>${j.n}</td><td class="c ${j.age >= 21 ? 'down' : ''}">${j.age}</td>
+    <td class="f">${j.f}</td><td><b class="${j.cpe >= me.rep + 8 ? 'amber' : ''}">${j.cpe}</b></td><td class="tr">${j.tr.join(', ')}</td>
+    <td><button class="mini primary" onclick="doPromote(${j.id})">Promover</button> <button class="mini" onclick="askDismiss(${j.id})">Dispensar</button></td></tr>`).join('');
+  return `<div class="cols"><div class="panel scroll"><h3>Categorias de base (${MY().youth.length}/${MAX_YOUTH})</h3>
+      ${rows ? `<table><thead><tr><th>Pos</th><th>Garoto</th><th class="c">Idade</th><th>Força</th><th title="Capacidade potencial estimada">CPE</th><th>Características</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="muted">A base está vazia. A próxima peneira acontece na virada da temporada.</div>'}
+      <div class="muted" style="margin-top:8px;font-size:12px">CPE é a capacidade potencial estimada: até onde o garoto pode chegar, com uma margem de erro. Os juniores evoluem sozinhos enquanto estão na base e não custam salário. Promova quando a força estiver perto do CPE ou quando precisar dele; com 21 anos (idade em vermelho) é a última temporada antes de ele deixar o clube. A cada virada de temporada chega uma nova peneira.</div></div>
+    <div class="panel"><h3>Treino do profissional</h3>${TRAIN.map((t, i) => `<div class="opt ${cur === i ? 'sel' : ''}" onclick="setTac('train',${i})"><b>${t.n}</b><div class="muted">${t.d}</div></div>`).join('')}</div></div>`;
+}
+function doPromote(jid) { act('promote', [jid], e => { toast(e || 'Promovido ao elenco profissional.'); render(); }); }
+function askDismiss(jid) {
+  const j = MY().youth.find(x => x.id === jid);
+  confirmBox('Dispensar da base', `Dispensar <b>${j.n}</b> (${POSN[j.pos]}, ${j.age} anos, CPE ${j.cpe})? Não dá para desfazer.`, 'Dispensar', () => act('dismissJunior', [jid], () => render()));
+}
+
+/* ---------- ajuda e atalhos ---------- */
+
+function helpBox() {
+  const sec = (t, x) => `<h3 style="margin-top:14px">${t}</h3><div style="font-size:13px">${x}</div>`;
+  modal(`<h2>Como jogar</h2>
+    ${sec('Temporada', `O ano começa com o regional, depois vêm as 38 rodadas da liga com a Copa do Brasil e a ${AM_NAME} no meio. Quatro clubes sobem e quatro caem em cada série. Datas em que seu time não joga são simuladas sozinhas.`)}
+    ${sec('Escalação', 'Arraste o jogador até a camisa no campo. Jogador fora de posição (nome em amarelo) rende menos; quanto mais distante a função, pior. Energia baixa e moral baixa também derrubam o rendimento, então rode o elenco.')}
+    ${sec('Tática', 'Ataque total cria mais chances e abre a defesa. Retranca segura o adversário e torna os contra-ataques mais perigosos. Marcação pesada dificulta o ataque rival, mas rende cartões e suspensões.')}
+    ${sec('Força e evolução', 'A força vai de 1 a 99. Jovens até 27 anos evoluem (mais rápido jogando); a partir dos 31 a força cai. As características dão bônus quando o jogador atua na função certa.')}
+    ${sec('Dinheiro', 'Patrocínio e salários correm a cada data; a bilheteria entra nos jogos em casa (na Copa a renda é dividida). Premiações de Copa, regional e liga fazem diferença. Comprar jovens baratos, deixá-los evoluir e vender é uma boa fonte de renda.')}
+    ${sec('Contratos e base', 'Renove antes do fim do contrato ou o jogador sai de graça. Empreste jovens para ganharem jogo. Na base, promova o garoto quando a força estiver perto do CPE.')}
+    ${sec('Carreira', 'Cumpra o objetivo da diretoria para manter a confiança. Confiança alta traz convites de clubes maiores; confiança zerada dá demissão.')}
+    ${sec('Online', 'O botão Online abre uma sala e mostra um código. Os amigos entram pela tela inicial em "Entrar em sala online" e escolhem um clube. A data avança quando todos clicam em Estou pronto; as partidas rolam ao mesmo tempo para todos. Entre dois técnicos humanos, um jogador só muda de clube se o dono o colocar à venda.')}
+    ${sec('Atalhos na partida', 'Espaço ou Enter: iniciar, pausar e continuar. Teclas 1, 2 e 3: velocidade. R: ir direto para o resultado. Esc fecha janelas.')}
+    <div class="row"><button class="primary" onclick="closeModal()">Fechar</button></div>`, true);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); return; }
+  if (UI.view !== 'live' || !LIVE || online() || el('modal').classList.contains('show') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (LIVE.done) afterMatch(); else livePlay(); }
+  else if (!LIVE.done && '123'.includes(e.key)) liveSpeed(+e.key - 1);
+  else if (!LIVE.done && e.key.toLowerCase() === 'r') liveSkip();
+});
+
+/* ---------- carreira ---------- */
+
+function vCarreira() {
+  const me = T(G.me), rank = coachRank(), myI = rank.findIndex(r => r.me), c = Math.round(MY().conf);
+  const show = rank.slice(0, 15).map((r, i) => [r, i]);
+  if (myI >= 15) show.push([rank[myI], myI]);
+  const hist = G.hist.slice().reverse().map(h => `<tr><td>${h.s}</td><td>${myH(h).club || ''}</td><td class="muted">${campTxt(h)}</td><td>${h.ch[0]}</td><td>${h.cup || ''}</td><td>${h.am || ''}</td><td>${h.bo || ''}</td></tr>`).join('');
+  return `<div class="cols2"><div class="grid"><div class="panel"><h3>Técnico ${esc(MY().coach)}</h3><div class="kpi">
+      <div><small>Confiança da diretoria</small><b class="${c < 25 ? 'down' : c >= 60 ? 'up' : ''}">${c}%</b> ${bar(c)}</div>
+      <div><small>Ranking de técnicos</small><b>${myI + 1}º</b> <span class="muted">de ${rank.length}</span></div><div><small>Pontos</small><b>${MY().cpts}</b></div></div>
+      <div style="margin-top:12px">Objetivo na ${DIVS[me.div]}: <b>${MY().goal.txt}</b>. Posição atual: ${posOf(me)}º.</div>
+      <div class="muted" style="margin-top:8px;font-size:12px">A confiança sobe com vitórias, títulos e com o time dentro do objetivo; cai com derrotas e campanha abaixo do esperado. Se chegar a zero, você é demitido e precisa recomeçar em um clube menor. Com a confiança alta, clubes maiores fazem convites no fim da temporada.</div></div>
+    ${MY().titles.length ? `<div class="panel"><h3>Títulos</h3>${MY().titles.map(x => `<div>🏆 ${x}</div>`).join('')}</div>` : ''}
+    <div class="panel scroll"><h3>Histórico</h3>${hist ? `<table><thead><tr><th>Ano</th><th>Seu clube</th><th>Campanha</th><th>Série A</th><th>Copa do Brasil</th><th>Américas</th><th>Melhor jogador</th></tr></thead><tbody>${hist}</tbody></table>` : '<div class="muted">Sua primeira temporada ainda está em andamento.</div>'}</div></div>
+    <div class="panel"><h3>Ranking de técnicos</h3><table><thead><tr><th>#</th><th>Técnico</th><th>Clube</th><th class="r">Pontos</th></tr></thead><tbody>
+      ${show.map(([r, i]) => `<tr class="${r.me ? 'me' : ''}"><td>${i + 1}</td><td>${esc(r.n)}</td><td class="muted">${r.club}</td><td class="r"><b>${r.pts}</b></td></tr>`).join('')}</tbody></table>
+      <div class="muted" style="margin-top:8px;font-size:12px">Vitórias valem de 1 a 5 pontos (mais na Série A e fora de casa). Títulos e boas colocações dão bônus: 30 pela Taça das Américas, 25 pelo título da Série A, 20 pela Copa do Brasil, 15 pelo regional.</div></div></div>`;
+}
+
+function vFired() {
+  const jobs = MY().jobs.map(id => { const t = T(id); return `<div class="row" style="margin-top:10px">${crest(t, 30)}<div><b>${t.name}</b><div class="muted">${DIVS[t.div]} · ${posOf(t)}º · força ${Math.round(top11(t))} · caixa ${$$(t.cash)}</div></div>
+    <button class="primary" style="margin-left:auto" onclick="doTakeOver(${id})">Assumir</button></div>`; }).join('');
+  return `<div class="start"><div class="panel" style="max-width:640px;margin:60px auto;padding:26px"><h1>Você foi demitido</h1>
+    <div style="margin:10px 0 16px">A diretoria do ${T(G.me).name} perdeu a confiança no seu trabalho. A carreira continua: estes clubes aceitam contratar você agora.</div>${jobs}</div></div>`;
+}
+
+function doTakeOver(id) {
+  act('takeOver', [id], e => {
+    if (e) { toast(e); return; }
+    skipByes(); UI.view = 'hub'; go('elenco');
+  });
+}
+
+function exportSave() {
+  save();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(G)], { type: 'application/json' }));
+  a.download = `prancheta-${T(G.me).name.replace(/[^\w]+/g, '-').toLowerCase()}-${G.season}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function importSave(file) {
+  if (!file) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const g = JSON.parse(rd.result);
+      if (!g || g.v !== 2 || !Array.isArray(g.teams) || g.me == null) throw new Error('formato');
+      netLeave(); G = g; PM = null; migrate(); save();
+      UI.view = 'hub'; go('elenco');
+      toast('Jogo importado.');
+    } catch (e) { alertBox('Não foi possível importar', 'O arquivo escolhido não é um jogo salvo do Prancheta desta versão.'); }
+  };
+  rd.readAsText(file);
+}
+
+/* ---------- finanças / notícias ---------- */
+
+function vFin() {
+  const me = T(G.me), wages = me.players.reduce((s, p) => s + p.sal, 0), f = MY().fin;
+  const bal = f.spon + f.tick + f.tin + f.prem - f.sal - f.tout - f.obras;
+  const line = (n, v) => `<tr><td>${n}</td><td class="r ${v < 0 ? 'down' : v > 0 ? 'up' : ''}">${$$(v)}</td></tr>`;
+  return `<div class="cols2"><div class="grid"><div class="panel"><h3>Situação</h3><div class="kpi"><div><small>Caixa</small><b class="${me.cash < 0 ? 'down' : ''}">${$$(me.cash)}</b></div>
+      <div><small>Patrocínio / data</small><b>${$$(me.spon)}</b></div><div><small>Folha salarial / data</small><b>${$$(wages)}</b></div></div>
+      ${me.cash < 0 ? '<div class="msg" style="margin:10px 0 0">O clube está no vermelho. Venda jogadores ou reduza a folha: sem caixa você não consegue contratar.</div>' : ''}</div>
+    <div class="panel"><h3>Balanço da temporada ${G.season}</h3><table><tbody>${line('Patrocínio', f.spon)}${line('Bilheteria', f.tick)}${line('Premiações (Copa e regional)', f.prem)}${line('Venda de jogadores', f.tin)}${line('Salários e rescisões', -f.sal)}
+      ${line('Compras e empréstimos', -f.tout)}${line('Obras no estádio', -f.obras)}<tr><td><b>Resultado</b></td><td class="r ${bal < 0 ? 'down' : 'up'}"><b>${$$(bal)}</b></td></tr></tbody></table>
+      <div class="muted" style="margin-top:8px;font-size:12px">A premiação da liga é paga no fim da temporada (Série ${'ABCD'[me.div]}: até ${$$(PRIZE[me.div])} para o campeão). Patrocínio e salários correm a cada uma das ${G.cal.length} datas do calendário.</div></div></div>
+    <div class="panel"><h3>${me.std}</h3><div class="kpi"><div><small>Capacidade</small><b>${num(me.cap)}</b></div><div><small>Último público</small><b>${me.att ? num(me.att) : '—'}</b></div>
+      <div><small>Ingresso</small><b>R$ ${me.ticket}</b></div></div>
+      <div class="field" style="grid-template-columns:150px 1fr"><span class="muted">Preço do ingresso</span><span><input type="number" min="1" max="500" value="${me.ticket}" style="width:90px" onchange="setTicket(this.value)"> <span class="muted">sugerido: R$ ${TICKET[me.div]}</span></span>
+        <span class="muted">Ampliar estádio</span><span class="row"><button onclick="askExpand(1000)">+1.000 (${$$(1000 * SEAT_COST)})</button><button onclick="askExpand(5000)">+5.000 (${$$(5000 * SEAT_COST)})</button></span></div>
+      <div class="muted" style="margin-top:10px;font-size:12px">O público depende do tamanho da torcida, da posição na tabela, da fase da competição e do preço. Ingresso caro esvazia o estádio; ampliar só compensa se o estádio já lota.</div></div></div>`;
+}
+function setTicket(v) { T(G.me).ticket = clamp(Math.round(+v) || TICKET[T(G.me).div], 1, 500); netPushTeam(); render(); }
+function askExpand(n) {
+  confirmBox('Ampliar estádio', `Construir ${num(n)} novos lugares por ${$$(n * SEAT_COST)}?`, 'Construir', () => act('expand', [n], e => { toast(e || 'Obra concluída.'); render(); }));
+}
+function vNews() {
+  return `<div class="panel news"><h3>Notícias</h3>${MY().news.map(n => `<div><small>${n.s}${n.d ? ' · ' + n.d : ''}</small>${esc(n.t)}</div>`).join('') || '<div class="muted">Nada por aqui ainda.</div>'}</div>`;
+}
+
+/* ---------- partida ao vivo ---------- */
+
+// simula sozinho as datas em que o time não joga; para se chegar uma proposta, para ela não expirar sem ser vista
+function skipByes() {
+  if (online()) return 0;
+  const done = [];
+  while (!G.over && !MY().fired && !MY().offers.length && !myFx(G.day)) {
+    done.push(dayName(G.day));
+    dayGroups(G.day).forEach(g => g.fxs.forEach(simMatch));
+    endDay();
+  }
+  if (done.length) { addNews(`Datas sem jogo do seu time foram simuladas: ${done.join('; ')}. Os resultados estão na aba Jogos.`); save(); }
+  return done.length;
+}
+
+function startRound(force) {
+  if (online()) { netReady(!MY().ready); return; }
+  const me = T(G.me), mine = myFx(G.day), groups = dayGroups(G.day);
+  cleanLineup(me);
+  if (!mine) { // folga: simula tudo e mostra os resultados
+    groups.forEach(g => g.fxs.forEach(simMatch));
+    endDay(); skipByes();
+    if (G.over) { UI.view = 'season'; render(); } else { go('jogos'); toast('Data simulada. Veja os resultados.'); }
+    return;
+  }
+  if (!force && !validXI(me)) {
+    confirmBox('Escalação incompleta', 'Há vaga vazia ou jogador lesionado/suspenso entre os titulares. Quer que o auxiliar escale o melhor time disponível?', 'Escalar e jogar', () => { autoPick(me); startRound(true); });
+    return;
+  }
+  me.bench = me.bench.filter(id => ok(P(id)));
+  let ms = null, title = '';
+  groups.forEach(g => {
+    if (g.fxs.includes(mine.fx)) { ms = g.fxs.map(mkMatch); title = g.title; } else g.fxs.forEach(simMatch);
+  });
+  const m = ms.find(x => x.h.human || x.a.human);
+  LIVE = { ms, mine: m, title, k: m.h.human ? 'h' : 'a', speed: 0, paused: true, skip: false, done: false, msg: 'Tudo pronto. Clique em Iniciar para a bola rolar.', so: null, sb: null, timer: null, started: false };
+  UI.view = 'live'; render();
+}
+
+function tick() {
+  if (!LIVE || LIVE.done || LIVE.paused) return;
+  const m = LIVE.mine;
+  do {
+    LIVE.ms.forEach(step);
+    if (m.needSub) {
+      m.needSub = 0;
+      const X = m[LIVE.k];
+      if (LIVE.skip) injSub(m, LIVE.k, X);
+      else if (X.subs < 5 && X.bench.length) { LIVE.paused = true; LIVE.msg = 'Jogador lesionado! Escolha o lesionado e um reserva para substituir, depois continue.'; }
+    }
+    if (m.min === 45 && !LIVE.skip) {
+      if (!LIVE.paused) LIVE.msg = 'Intervalo. Ajuste o time e continue.';
+      LIVE.paused = true;
+    }
+    if (m.min >= 90) { LIVE.ms.forEach(finish); endDay(); LIVE.done = true; LIVE.paused = false; LIVE.msg = ''; break; }
+  } while (LIVE.skip);
+  render();
+  if (!LIVE.done && !LIVE.paused) LIVE.timer = setTimeout(tick, SPEEDS[LIVE.speed]);
+}
+function livePlay() {
+  if (!LIVE || LIVE.done) return;
+  if (online()) { if (LIVE.paused) netReady(!MY().ready); return; }
+  clearTimeout(LIVE.timer);
+  LIVE.paused = !LIVE.paused; LIVE.started = true; LIVE.msg = '';
+  if (LIVE.paused) render(); else tick();
+}
+function liveSpeed(s) { if (online()) return; LIVE.speed = s; render(); }
+function liveSkip() { if (online()) return; clearTimeout(LIVE.timer); LIVE.skip = true; LIVE.paused = false; LIVE.started = true; tick(); }
+function liveSel(kind, v) {
+  if (kind === 'o') LIVE.so = LIVE.so === v ? null : v; else LIVE.sb = LIVE.sb === v ? null : v;
+  render();
+}
+function liveSub() {
+  if (isGuest()) { act('liveSub', [LIVE.so, LIVE.sb], e => { if (e) toast(e); }); LIVE.so = LIVE.sb = null; render(); return; }
+  const m = LIVE.mine, X = m[LIVE.k], e = X.on[LIVE.so], p = X.bench.find(b => b.id === LIVE.sb);
+  if (!e || !p) return;
+  if (X.subs >= 5) { toast('Você já fez as 5 substituições.'); return; }
+  if (e.st === 'red') { toast('Jogador expulso não pode ser substituído.'); return; }
+  sub(m, LIVE.k, X, e, p);
+  LIVE.so = LIVE.sb = null;
+  render();
+}
+function liveTac(k, v) { T(G.me)[k] = +v; if (isGuest()) act('liveTac', [k, +v]); render(); }
+function afterMatch() {
+  if (online()) { netAfterMatch(); return; }
+  LIVE = null;
+  if (skipByes()) toast('Datas sem jogo do seu time foram simuladas.');
+  UI.view = G.over ? 'season' : 'hub';
+  if (UI.view === 'hub') go('elenco'); else render();
+}
+
+const ycN = (m, k) => m.yn ? m.yn[k] : [...m.ycs.keys()].filter(p => m[k].played.has(p)).length;
+function vLive() {
+  if (!LIVE.mine) return vLiveWatch();
+  const L = LIVE, m = L.mine, me = T(G.me), X = m[L.k], fx = m.fx;
+  const games = L.ms.map(x => `<div class="g ${x === m ? 'me' : ''} ${x.last && x.last.startsWith(x.min + "'") ? 'flash' : ''}"><span class="h">${x.h.t.name}</span>${crest(x.h.t, 20)}<b>${x.h.g}</b><span class="muted c">x</span><b>${x.a.g}</b>${crest(x.a.t, 20)}<span>${x.a.t.name}</span>
+    <small>${x.fx.pen ? `Pênaltis: ${x.fx.pen[0]} x ${x.fx.pen[1]}` : x.last || (x.fx.agg ? `Ida: ${x.fx.agg[0]} x ${x.fx.agg[1]}` : '')}</small></div>`).join('');
+  const feed = m.ev.slice().reverse().map(e => `<div class="${e.type} ${e.k === L.k ? '' : 'them'}"><span class="muted">${e.min}'</span> ${e.txt}</div>`).join('');
+  const on = X.on.map((e, i) => `<div class="lp ${L.so === i ? 'sel' : ''} ${e.st}" onclick="liveSel('o',${i})">${posTag(e.role)}<span>${e.p.n}${e.st === 'red' ? ' <span class="tag sus">EXP</span>' : e.st === 'inj' ? ' <span class="tag inj">LES</span>' : ''}${m.ycs.get(e.p) ? ' <span class="tag yc">A</span>' : ''}</span><b>${e.p.f}</b>${bar(e.p.en)}<span></span></div>`).join('');
+  const bench = X.bench.map(p => `<div class="lp ${L.sb === p.id ? 'sel' : ''}" onclick="liveSel('b',${p.id})">${posTag(p.pos)}<span>${p.n}</span><b>${p.f}</b>${bar(p.en)}<span></span></div>`).join('') || '<div class="muted">Banco vazio.</div>';
+  const sel = (k, arr, cur) => `<select onchange="liveTac('${k}',this.value)">${arr.map((s, i) => `<option value="${i}" ${i === cur ? 'selected' : ''}>${s.n}</option>`).join('')}</select>`;
+  const ctl = online() ? netLiveCtl() : L.done ? `<button class="primary" onclick="afterMatch()">Continuar</button>` :
+    `<button class="primary" onclick="livePlay()">${L.paused ? (L.started ? 'Continuar' : 'Iniciar') : 'Pausar'}</button>
+     ${['1x', '2x', '4x'].map((n, i) => `<button class="${L.speed === i ? 'on' : ''}" onclick="liveSpeed(${i})">${n}</button>`).join('')}
+     <button onclick="liveSkip()" title="Simula o resto do jogo de uma vez">Ir para o resultado</button>`;
+  const tot = m.h.pos + m.a.pos || 1, ph = Math.round(m.h.pos / tot * 100);
+  const stl = (a, b, t) => `<div class="stl"><b>${a}</b><span class="muted">${t}</span><b>${b}</b></div>`;
+  const stats = m.min ? stl(ph + '%', (100 - ph) + '%', 'Posse de bola') + stl(`${m.h.sh} (${m.h.sot})`, `${m.a.sh} (${m.a.sot})`, 'Finalizações (no gol)') + stl(ycN(m, 'h'), ycN(m, 'a'), 'Cartões amarelos') : '';
+  const notas = L.done ? [...X.played].sort((a, b) => (b.lr || 0) - (a.lr || 0)).map(p => `<div class="lp" style="cursor:default">${posTag(p.pos)}<span>${p.n}${m.gl.get(p) ? ' ⚽'.repeat(m.gl.get(p)) : ''}</span><span></span><span></span><b class="${p.lr >= 7 ? 'up' : p.lr < 5.5 ? 'down' : ''}">${(p.lr || 0).toFixed(1)}</b></div>`).join('') : '';
+  let end = '';
+  if (L.done) {
+    end = `Fim de jogo. Público no estádio: ${num(fx.att || 0)}.`;
+    if (fx.pen) end += ` Pênaltis: ${m.h.t.name} ${fx.pen[0]} x ${fx.pen[1]} ${m.a.t.name}.`;
+    if (fx.w != null) end += fx.w === me.id ? ' <b class="up">Seu time avança!</b>' : ' <b class="down">Seu time está eliminado.</b>';
+  }
+  return `<div class="live"><div class="livehead"><div class="clock">${L.done ? 'FIM' : m.min + "'"}</div><b>${L.title}</b><span style="margin-left:auto" class="row">${ctl}</span></div>
+    <div class="cols2"><div class="panel">${games}</div>
+    <div class="grid"><div class="panel"><div class="score"><div>${crest(m.h.t, 44)}<div class="n">${m.h.t.name}</div></div><div class="big">${m.h.g} x ${m.a.g}</div><div>${crest(m.a.t, 44)}<div class="n">${m.a.t.name}</div></div></div>
+      ${fx.agg ? `<div class="muted c" style="margin-bottom:8px">Jogo de ida: ${m.h.t.name} ${fx.agg[0]} x ${fx.agg[1]} ${m.a.t.name} · agregado ${m.h.g + fx.agg[0]} x ${m.a.g + fx.agg[1]}</div>` : fx.ko ? '<div class="muted c" style="margin-bottom:8px">Jogo único: empate leva para os pênaltis.</div>' : ''}
+      ${stats}${L.msg ? `<div class="msg">${L.msg}</div>${online() ? readyChips() : ''}` : ''}${end ? `<div class="msg">${end}</div>` : ''}
+      <div class="feed">${feed || '<div class="muted">A partida ainda não começou.</div>'}</div></div>
+    ${L.done ? `<div class="panel"><h3>Notas do ${me.name}</h3>${notas}</div>` : `<div class="panel"><div class="field" style="margin:0 0 10px"><span class="muted">Estilo</span>${sel('style', STYLE, me.style)}<span class="muted">Marcação</span>${sel('mark', MARK, me.mark)}</div>
+      <div class="cols2" style="gap:10px"><div><h3>Em campo</h3>${on}</div><div><h3>Banco</h3>${bench}
+      <button class="primary" style="width:100%;margin-top:10px" ${L.so != null && L.sb != null ? '' : 'disabled'} onclick="liveSub()">Substituir (${X.subs}/5)</button></div></div></div>`}</div></div></div>`;
+}
+
+/* ---------- fim de temporada ---------- */
+
+function vSeason() {
+  const me = T(G.me), tabs = [0, 1, 2, 3].map(table), pos = tabs[me.div].findIndex(r => r.t === me) + 1;
+  const prize = Math.round(PRIZE[me.div] * (21 - pos) / 20), rk = regOf(me);
+  const fate = me.div > 0 && pos <= 4 ? `<span class="up">Acesso garantido para a ${DIVS[me.div - 1]}!</span>` : me.div < 3 && pos > 16 ? `<span class="down">Rebaixado para a ${DIVS[me.div + 1]}.</span>` :
+    me.div === 0 && pos === 1 ? '<span class="amber">CAMPEÃO BRASILEIRO!</span>' : `Permanece na ${DIVS[me.div]}.`;
+  const cards = tabs.map((tb, d) => {
+    const top = G.teams.filter(t => t.div === d).flatMap(t => t.players.map(p => ({ p, t }))).sort((a, b) => b.p.g - a.p.g)[0];
+    return `<div class="panel"><h3>${DIVS[d]}</h3><div class="row">${crest(tb[0].t, 30)}<div><b>${tb[0].t.name}</b><div class="muted">Campeão · ${tb[0].pts} pontos</div></div></div>
+      <div style="margin-top:10px;font-size:13px">${d > 0 ? `<div><span class="up">Sobem:</span> ${tb.slice(0, 4).map(r => r.t.name).join(', ')}</div>` : ''}
+      ${d < 3 ? `<div><span class="down">Caem:</span> ${tb.slice(-4).map(r => r.t.name).join(', ')}</div>` : ''}
+      <div><span class="muted">Artilheiro:</span> ${top.p.n} (${top.t.name}), ${top.p.g} gols</div></div></div>`;
+  }).join('');
+  const exp = me.players.filter(p => p.ce <= G.season && !p.loan), aw = awards(me.div), met = pos <= MY().goal.pos;
+  const awCard = aw.best ? `<div class="panel" style="margin-top:14px"><h3>Prêmios da ${DIVS[me.div]}</h3><div class="row">${crest(aw.best.t, 30)}<div><b>${aw.best.p.n}</b> <span class="muted">(${aw.best.t.name})</span><div class="muted">Melhor jogador da temporada · nota média ${aw.best.r.toFixed(2)} · ${aw.best.p.g} gols</div></div></div>
+    <div class="chips" style="margin-top:10px"><span class="muted" style="font-size:12px">Seleção da temporada:</span>${aw.xi.map(x => `<span class="chip ${x.t.id === G.me ? 'mine' : ''}">${POSN[x.p.pos]} ${x.p.n} · ${x.t.name} · ${x.r.toFixed(1)}</span>`).join('')}</div></div>` : '';
+  const jobs = MY().jobs.map(id => { const t = T(id); return `<div class="row" style="margin-top:8px">${crest(t, 26)}<div><b>${t.name}</b> <span class="muted">${DIVS[t.div]} · força ${Math.round(top11(t))} · caixa ${$$(t.cash)}</span></div><button style="margin-left:auto" onclick="askJob(${id})">Aceitar e iniciar ${G.season + 1}</button></div>`; }).join('');
+  return `<div class="start"><div class="panel" style="text-align:center;padding:26px">${crest(me, 60)}<h1 style="margin-top:8px">Fim da temporada ${G.season}</h1>
+      <div style="font-size:18px;margin:8px 0">${me.name}: ${pos}º lugar na ${DIVS[me.div]}. ${fate}</div>
+      <div>Objetivo da diretoria: ${MY().goal.txt}. ${met ? '<b class="up">Cumprido.</b>' : '<b class="down">Não cumprido.</b>'}</div>
+      <div class="muted">Premiação da liga: ${$$(prize)} · Copa do Brasil: ${T(G.cup.champ).name}${G.am && G.am.champ != null ? ` · ${AM_NAME}: ${T(G.am.champ).name}` : ''} · ${REGS[rk].n}: ${T(G.reg[rk].champ).name}</div>
+      ${exp.length ? `<div class="msg" style="margin:14px auto 0;max-width:640px;text-align:left"><b>Contratos terminando:</b> ${exp.map(p => `${p.n} (${POSN[p.pos]} ${p.f})`).join(', ')}. Quem não renovar agora deixa o clube de graça na virada.</div>` : ''}
+      <div class="row" style="justify-content:center;margin-top:16px"><button style="padding:10px 22px" onclick="UI.view='hub';go('elenco')">Voltar ao clube</button>
+      <button class="primary" style="padding:10px 22px" onclick="nextSeason()">${playLabel('Iniciar temporada ' + (G.season + 1))}</button></div>${readyChips()}</div>
+    ${jobs ? `<div class="panel" style="margin-top:14px"><h3>Convites de outros clubes</h3><div class="muted">Seu trabalho chamou atenção. Se aceitar, você assume o novo clube já na próxima temporada.</div>${jobs}</div>` : ''}
+    ${awCard}<div class="pickgrid">${cards}</div></div>`;
+}
+function askJob(id) {
+  const t = T(id);
+  confirmBox('Trocar de clube', `Deixar o ${T(G.me).name} e assumir o <b>${t.name}</b> (${DIVS[t.div]})? Você começa do zero com o elenco, o caixa e a base do novo clube.`, 'Aceitar', () => nextSeason(id));
+}
+function nextSeason(job) {
+  if (online()) { netNextSeason(job); return; }
+  rollover();
+  if (job != null && !MY().fired) takeOver(job);
+  skipByes();
+  const me = T(G.me);
+  if (!validXI(me)) autoPick(me);
+  UI.view = 'hub'; go('news');
+}
+
+render();
+</script>
+</body>
+</html>
