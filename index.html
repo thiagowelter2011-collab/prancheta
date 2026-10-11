@@ -162,7 +162,9 @@ tr.me td { background: #1f3a2b !important; font-weight: 600; }
 .news div { padding: 7px 0; border-bottom: 1px solid #1c2a23; }
 .news small { color: var(--muted); margin-right: 8px; }
 
+.edcols { grid-template-columns: 320px minmax(0, 1fr); }
 @media (max-width: 980px) {
+  .edcols { grid-template-columns: minmax(0, 1fr); }
   .cols, .cols2 { grid-template-columns: minmax(0, 1fr); }
   .pickgrid { grid-template-columns: repeat(2, 1fr); }
   .top .stat { margin-left: 0; text-align: left; }
@@ -399,6 +401,32 @@ const humans = () => Object.keys(G.prof).map(k => T(+k));
 // executa uma ação como se fosse o técnico do clube id (o servidor da sala usa isso para atender os convidados)
 function as(id, f) { const cur = G.me; G.me = id; try { return f(); } finally { G.me = cur; } }
 
+/* ---------- base de clubes (editável) ---------- */
+
+const DBKEY = 'prancheta_db_v1';
+// 'nome|UF|cores[|força]' -> { n, uf, col, rep, sq: [[pos, nome, idade, força], ...] }
+function parseClub(s) {
+  const [n, uf, col, rep] = s.split('|');
+  const sq = (SQUADS[n] || '').split(';').filter(Boolean).map(x => { const [pos, nm, age, f] = x.split(':'); return [pos, nm, +age, +f]; });
+  return { n, uf, col, rep: rep == null ? null : +rep, sq };
+}
+const defaultDB = () => CLUBS.map(parseClub);
+const regCount = db => REGS.map(r => db.filter(c => r.ufs.includes(c.uf)).length);
+function validDB(d) {
+  return Array.isArray(d) && d.length === CLUBS.length && d.every(c => c && typeof c.n === 'string' && c.n.trim() && typeof c.col === 'string' && PAL[c.col[0]] && PAL[c.col[1]] &&
+    REGS.some(r => r.ufs.includes(c.uf)) && Array.isArray(c.sq) && c.sq.every(p => Array.isArray(p) && TRAITS[p[0]] && typeof p[1] === 'string')) && regCount(d).every(x => x >= 4);
+}
+function loadDB() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DBKEY) || 'null');
+    if (validDB(d)) return d;
+  } catch (e) { /* base corrompida: usa a padrão */ }
+  return defaultDB();
+}
+function saveDB(d) { try { localStorage.setItem(DBKEY, JSON.stringify(d)); return true; } catch (e) { return false; } }
+function hasCustomDB() { try { return !!localStorage.getItem(DBKEY); } catch (e) { return false; } }
+function resetDB() { try { localStorage.removeItem(DBKEY); } catch (e) { /* sem armazenamento */ } }
+
 /* ---------- jogadores ---------- */
 
 function rawValue(f, age) {
@@ -441,9 +469,9 @@ function youth(t, pos) {
 const demand = rep => 60000 * Math.pow(rep / 85, 3.5);
 const sponsorOf = t => Math.round(22 * rawValue(t.rep, 26) * 0.0035 * 0.66 / 1000) * 1000;
 
-function mkTeam(s, i) {
-  const [name, uf, col, frep] = s.split('|'), ext = frep != null;
-  const rep = (ext ? +frep : 84 - i * 0.55) + (R() * 3 - 1.5);
+function mkTeam(c, i) {
+  const name = c.n, uf = c.uf, col = c.col, ext = c.rep != null;
+  const rep = (ext ? c.rep : 84 - i * 0.55) + (R() * 3 - 1.5);
   const t = {
     id: i, name, uf, c1: col[0], c2: col[1], pat: i % 5, div: ext ? 4 : Math.floor(i / 20), rep, es: ext,
     std: '', cap: 0, ticket: 0, cash: 0, spon: 0, att: 0,
@@ -456,9 +484,11 @@ function mkTeam(s, i) {
   t.ticket = TICKET[t.div];
   // elenco real, quando existe; as posições que faltarem são completadas com garotos gerados
   const need = SQUAD.slice();
-  (SQUADS[name] || '').split(';').filter(Boolean).forEach(x => {
-    const [pos, nm, age, f] = x.split(':'), p = mkPlayer(pos, +f, +age, +f + (+age < 24 ? ri(2, 8) : +age < 27 ? ri(0, 3) : 0), ext);
-    p.n = nm; t.players.push(p);
+  c.sq.forEach(([pos, nm, age, f]) => {
+    if (!TRAITS[pos] || t.players.length >= MAX_SQUAD) return;
+    age = clamp(Math.round(+age) || 25, 15, 45); f = clamp(Math.round(+f) || 50, 1, 99);
+    const p = mkPlayer(pos, +f, +age, +f + (+age < 24 ? ri(2, 8) : +age < 27 ? ri(0, 3) : 0), ext);
+    p.n = String(nm).slice(0, 30) || p.n; t.players.push(p);
     const k = need.indexOf(pos);
     if (k >= 0) need.splice(k, 1);
   });
@@ -482,7 +512,7 @@ function newWorld() {
     free: [], hist: [], over: false
   };
   PM = null;
-  CLUBS.concat(FOREIGN).forEach((s, i) => G.teams.push(mkTeam(s, i)));
+  loadDB().concat(FOREIGN.map(parseClub)).forEach((c, i) => G.teams.push(mkTeam(c, i)));
   startSeason();
 }
 
@@ -1473,7 +1503,7 @@ function hasSave() {
 function migrate() {
   G.teams.forEach(t => { if (!t.coach) t.coach = { n: pick(FN) + ' ' + pick(SN), pts: 0 }; });
   // saves anteriores à Taça das Américas: os estrangeiros entram agora e a competição começa na próxima temporada
-  if (G.teams.length === CLUBS.length) FOREIGN.forEach((s, i) => G.teams.push(mkTeam(s, CLUBS.length + i)));
+  if (G.teams.length === CLUBS.length) FOREIGN.forEach((s, i) => G.teams.push(mkTeam(parseClub(s), CLUBS.length + i)));
   if (G.am === undefined) G.am = null;
   if (!G.mkt) G.mkt = [];
   if (G.sc === undefined) G.sc = null;
@@ -1976,7 +2006,7 @@ function alertBox(title, msg) {
 }
 
 function render() {
-  el('app').innerHTML = UI.view === 'start' ? vStart() : UI.view === 'join' ? vJoin() : UI.view === 'live' ? vLive() : MY().fired ? vFired() : UI.view === 'season' ? vSeason() : vHub();
+  el('app').innerHTML = UI.view === 'editor' ? vEditor() : UI.view === 'start' ? vStart() : UI.view === 'join' ? vJoin() : UI.view === 'live' ? vLive() : MY().fired ? vFired() : UI.view === 'season' ? vSeason() : vHub();
 }
 function go(tab) {
   UI.tab = tab; UI.slot = UI.pl = null;
@@ -1995,6 +2025,7 @@ function vStart() {
       <div class="row">${hasSave() ? '<button class="primary" onclick="continueGame()">Continuar carreira</button>' : ''}
       <button class="${hasSave() ? '' : 'primary'}" onclick="newGameScreen()">Novo jogo</button>
       <button onclick="netJoinBox()">Entrar em sala online</button>
+      <button onclick="openEditor()">Editor de times${hasCustomDB() ? ' ●' : ''}</button>
       <button onclick="el('imp').click()">Importar jogo salvo</button><input id="imp" type="file" accept=".json,application/json" style="display:none" onchange="importSave(this.files[0])"></div></div></div>`;
   }
   const cols = [0, 1, 2, 3].map(d => `<div class="panel"><h3>${DIVS[d]}</h3>${G.teams.filter(t => t.div === d).map(t =>
@@ -2347,6 +2378,157 @@ function doPromote(jid) { act('promote', [jid], e => { toast(e || 'Promovido ao 
 function askDismiss(jid) {
   const j = MY().youth.find(x => x.id === jid);
   confirmBox('Dispensar da base', `Dispensar <b>${j.n}</b> (${POSN[j.pos]}, ${j.age} anos, CPE ${j.cpe})? Não dá para desfazer.`, 'Dispensar', () => act('dismissJunior', [jid], () => render()));
+}
+
+/* ---------- editor de times ---------- */
+
+const COLN = { r: 'Vermelho', k: 'Preto', w: 'Branco', b: 'Azul', g: 'Verde', y: 'Amarelo', o: 'Laranja', p: 'Roxo', n: 'Azul-marinho', m: 'Grená', c: 'Celeste', s: 'Cinza' };
+const UFS = REGS.flatMap(r => r.ufs).sort();
+
+function openEditor() { UI.ed = { db: loadDB(), sel: 0 }; UI.view = 'editor'; render(); }
+function edSave() { if (!saveDB(UI.ed.db)) toast('Não foi possível salvar a base neste navegador.'); }
+function edClub() { return UI.ed.db[UI.ed.sel]; }
+function vEditor() {
+  const E = UI.ed, c = edClub(), opt = (v, t, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${t}</option>`;
+  const list = [0, 1, 2, 3].map(d => `<h3 style="margin-top:${d ? 12 : 0}px">${DIVS[d]}</h3>${E.db.slice(d * 20, d * 20 + 20).map((x, j) => { const i = d * 20 + j;
+    return `<div class="club ${i === E.sel ? 'sel' : ''}" onclick="UI.ed.sel=${i};render()">${crest({ id: 'e' + i, c1: x.col[0], c2: x.col[1], pat: i % 5 }, 18)}<span>${esc(x.n)} <span class="muted">${x.uf}</span></span><b>${x.sq.length || '–'}</b></div>`; }).join('')}`).join('');
+  const cols = k => `<select onchange="edSet('col${k}',this.value)">${Object.keys(COLN).map(v => opt(v, COLN[v], c.col[k])).join('')}</select>`;
+  const rows = c.sq.map((p, i) => `<tr><td><select onchange="edP(${i},0,this.value)">${Object.keys(POSN).map(v => opt(v, POSN[v], p[0])).join('')}</select></td>
+    <td><input value="${esc(p[1])}" maxlength="30" style="width:100%" onchange="edP(${i},1,this.value)"></td>
+    <td><input type="number" min="15" max="45" value="${p[2]}" style="width:64px" onchange="edP(${i},2,this.value)"></td>
+    <td><input type="number" min="1" max="99" value="${p[3]}" style="width:64px" onchange="edP(${i},3,this.value)"></td>
+    <td><button class="mini" title="Remover jogador" onclick="edDel(${i})">✕</button></td></tr>`).join('');
+  return `<div class="start" style="max-width:1300px"><div class="row" style="justify-content:space-between"><div class="logo" style="font-size:28px">Editor de <span>times</span></div>
+      <span class="row"><button onclick="edExport()">Exportar base</button><button onclick="el('impdb').click()">Importar base</button><input id="impdb" type="file" accept=".json,application/json" style="display:none" onchange="edImport(this.files[0])">
+      <button onclick="confirmBox('Restaurar base padrão','Apagar todas as suas edições e voltar aos clubes e elencos que vêm com o jogo?','Restaurar',()=>{resetDB();openEditor();})">Restaurar padrão</button>
+      <button class="primary" onclick="UI.view='start';render()">Concluir</button></span></div>
+    <div class="panel" style="margin:14px 0;font-size:13px" class="muted">As edições ficam salvas neste navegador e valem para os <b>próximos jogos novos</b> (carreiras em andamento não mudam). Numa sala online vale a base de quem cria a sala. A ordem dos clubes define a divisão e a força inicial: os 20 primeiros são a Série A. Elencos com menos de 22 jogadores são completados com jovens gerados; clube sem nenhum jogador recebe um elenco gerado inteiro.</div>
+    <div class="cols edcols"><div class="panel" style="max-height:78vh;overflow-y:auto">${list}</div>
+    <div class="grid"><div class="panel"><div class="row">${crest({ id: 'esel', c1: c.col[0], c2: c.col[1], pat: E.sel % 5 }, 40)}
+        <label>Nome <input value="${esc(c.n)}" maxlength="28" onchange="edSet('n',this.value)"></label>
+        <label>Estado <select onchange="edSet('uf',this.value)">${UFS.map(u => opt(u, u, c.uf)).join('')}</select></label>
+        <label>Cores ${cols(0)} ${cols(1)}</label></div>
+      <div class="row" style="margin-top:10px"><span class="muted">Posição ${E.sel + 1} de 80 (${DIVS[Math.floor(E.sel / 20)]}). Trocar de lugar com</span>
+        <select id="edswap">${E.db.map((x, i) => i === E.sel ? '' : `<option value="${i}">${i + 1}. ${esc(x.n)} (${DIVS[Math.floor(i / 20)]})</option>`).join('')}</select><button onclick="edSwap()">Trocar</button></div></div>
+    <div class="panel scroll"><div class="row" style="justify-content:space-between;margin-bottom:8px"><h3 style="margin:0">Elenco (${c.sq.length})</h3>
+        <span class="row"><button onclick="edAdd()">+ Jogador</button><button onclick="edPasteBox()">Colar elenco</button><button onclick="confirmBox('Limpar elenco','Remover todos os jogadores deste clube? O jogo vai gerar um elenco inteiro para ele.','Limpar',()=>{edClub().sq=[];edSave();render();})">Limpar elenco</button></span></div>
+      ${rows ? `<table><thead><tr><th>Posição</th><th>Nome</th><th>Idade</th><th>Força</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="muted">Sem jogadores cadastrados: o jogo gera o elenco deste clube.</div>'}</div></div></div></div>`;
+}
+function edSet(k, v) {
+  const c = edClub();
+  if (k === 'n') { v = String(v).trim().slice(0, 28); if (!v) { toast('O clube precisa de um nome.'); render(); return; } c.n = v; }
+  else if (k === 'uf') {
+    const old = c.uf; c.uf = v;
+    if (!regCount(UI.ed.db).every(x => x >= 4)) { c.uf = old; toast('Cada campeonato regional precisa de pelo menos 4 clubes.'); render(); return; }
+  } else if (k === 'col0') c.col = v + c.col[1];
+  else if (k === 'col1') c.col = c.col[0] + v;
+  edSave(); render();
+}
+function edP(i, k, v) {
+  const p = edClub().sq[i];
+  if (k === 0) p[0] = v;
+  else if (k === 1) p[1] = String(v).trim().slice(0, 30) || p[1];
+  else if (k === 2) p[2] = clamp(Math.round(+v) || 25, 15, 45);
+  else p[3] = clamp(Math.round(+v) || 50, 1, 99);
+  edSave();
+}
+function edAdd() {
+  const c = edClub();
+  if (c.sq.length >= MAX_SQUAD) { toast(`O elenco pode ter no máximo ${MAX_SQUAD} jogadores.`); return; }
+  c.sq.push(['A', 'Novo jogador', 22, 60]); edSave(); render();
+}
+function edDel(i) { edClub().sq.splice(i, 1); edSave(); render(); }
+function edSwap() {
+  const E = UI.ed, j = +el('edswap').value;
+  [E.db[E.sel], E.db[j]] = [E.db[j], E.db[E.sel]];
+  E.sel = j; edSave(); render();
+}
+// Leitura de elenco colado. Aceita uma linha por jogador (com posição e idade na mesma linha, separadas por tabulação ou espaços),
+// listas divididas por títulos ("Goleiros", "Defensores"...) e listas em que a posição ou a idade vêm na linha de baixo do nome.
+const PASTE_POS = [
+  [/^(goleir[oa]s?|guarda-?redes|gr|gol|gk)$/, 'G'],
+  [/^(lateral[- ]?(direito|dir\.?)|laterais direitos|ld|ala direit[oa])$/, 'LD'],
+  [/^(lateral[- ]?(esquerdo|esq\.?)|laterais esquerdos|le|ala esquerd[oa])$/, 'LE'],
+  [/^(zagueir[oa]s?|defensor(es)?|defesas?|defesa[- ]central|zag|dc|laterais|lateral)$/, 'Z'],
+  [/^(volantes?|m[eé]dio[- ]defensivo|primeiro volante|segundo volante|vol|mdc)$/, 'V'],
+  [/^(mei[ao]s?|meio-?campistas?|meio[- ]campo|m[eé]dios?|meia[- ](central|ofensivo|atacante|direita|esquerda|armador)|m[eé]dio[- ](centro|ofensivo|direito|esquerdo)|mei|mc|mo)$/, 'M'],
+  [/^(atacantes?|avan[çc]ados?|centroavantes?|pontas?|ponta[- ](direita|esquerda)|ponta de lan[çc]a|extremos?|extremo[- ](direito|esquerdo)|seg(undo|\.)? atacante|ata|pl|ca)$/, 'A']
+];
+const PASTE_SKIP = /^(elenco|plantel|jogador(es)?|nome|idade|posi[çc][ãa]o|pos\.?|nac\.?|nacionalidade|n[ºo°]\.?|#|contrato|valor( de mercado)?|altura|p[ée]|desde|at[ée]|jogos|gols|brasil|argentina|uruguai|paraguai|col[ôo]mbia|chile|equador|venezuela|peru|bol[íi]via|portugal|espanha|it[áa]lia|fran[çc]a|alemanha|inglaterra|angola|m[ée]xico|estados unidos|holanda|b[ée]lgica)$/;
+const pastePos = c => { const x = c.toLowerCase().replace(/[.:]+$/, '').trim(); const m = PASTE_POS.find(([re]) => re.test(x)); return m ? m[1] : null; };
+function parseSquad(text) {
+  const out = [], seen = new Set(), year = new Date().getFullYear();
+  let cur = null, last = null;
+  String(text).split(/\n/).forEach(raw => {
+    const line = raw.trim();
+    if (!line) return;
+    let pos = null, age = null, name = null, plural = false;
+    line.split(/\t+|\s{2,}|\s[|·•–-]\s/).forEach(cell => {
+      let c = cell.trim();
+      const d = c.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-]((19|20)\d{2})/), a = c.match(/(\d{1,2})\s*anos/i);
+      if (a) { age = +a[1]; c = c.replace(a[0], '').replace(/[()]/g, '').trim(); }
+      else if (d) { age = year - +d[3]; c = c.replace(d[0], '').replace(/[()]/g, '').trim(); }
+      c = c.replace(/^\d{1,2}[.)]?\s+(?=\D)/, ''); // número da camisa na frente do nome
+      if (!c) return;
+      const p = pastePos(c);
+      if (p) { pos = p; plural = /s$/i.test(c.replace(/[.:]+$/, '')) && c.length > 3; return; }
+      if (/^\d+$/.test(c)) { const v = +c; if (name && age == null && v >= 15 && v <= 45) age = v; return; }
+      if (name || PASTE_SKIP.test(c.toLowerCase()) || !/[A-Za-zÀ-ÿ]{2}/.test(c) || /[€$%]|\d{3,}/.test(c)) return;
+      // "Fulano Goleiro" ou "Fulano (Zagueiro)" na mesma célula
+      const w = c.replace(/[()]/g, ' ').trim().split(/\s+/);
+      for (let k = Math.min(3, w.length - 1); k >= 1 && !pos; k--) { const p2 = pastePos(w.slice(-k).join(' ')); if (p2) { pos = p2; w.splice(-k); } }
+      name = w.join(' ').slice(0, 30);
+    });
+    if (name) {
+      if (seen.has(name.toLowerCase())) return;
+      seen.add(name.toLowerCase());
+      last = { n: name, pos: pos || cur, age, own: !!pos };
+      out.push(last);
+    } else {
+      if (pos) { if (plural || !last || last.own) cur = pos; else { last.pos = pos; last.own = true; } }
+      if (age != null && last && last.age == null) last.age = age;
+    }
+  });
+  return out;
+}
+function edPasteBox() {
+  modal(`<h2>Colar elenco · ${esc(edClub().n)}</h2><div style="font-size:13px" class="muted">Copie a lista de jogadores de onde preferir e cole abaixo. O ideal é um jogador por linha, com posição e idade (ex.: <b>Rossi  Goleiro  29 anos</b>), mas listas divididas por títulos como "Goleiros" e "Atacantes" também funcionam. A força é estimada pelo nível do clube e você ajusta depois na tabela.</div>
+    <textarea id="edpaste" rows="12" style="width:100%;margin-top:10px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:8px;font:13px/1.4 ui-monospace,Consolas,monospace" placeholder="Rossi&#9;Goleiro&#9;29 anos&#10;Léo Pereira&#9;Zagueiro&#9;29 anos&#10;..."></textarea>
+    <label style="display:block;margin-top:8px"><input type="checkbox" id="edrepl" checked> Substituir o elenco atual (desmarque para acrescentar)</label>
+    <div class="row"><button onclick="closeModal()">Cancelar</button><button class="primary" onclick="edPaste()">Ler elenco</button></div>`, true);
+}
+function edPaste() {
+  const c = edClub(), got = parseSquad(el('edpaste').value), base = Math.round(84 - UI.ed.sel * 0.55) - 3;
+  if (!got.length) { toast('Não encontrei nomes de jogadores nesse texto.'); return; }
+  if (el('edrepl').checked) c.sq = [];
+  const room = MAX_SQUAD - c.sq.length, noPos = got.filter(p => !p.pos).length, noAge = got.filter(p => p.age == null).length;
+  got.slice(0, room).forEach(p => {
+    const age = clamp(p.age == null ? 25 : p.age, 15, 45);
+    c.sq.push([p.pos || 'M', p.n, age, clamp(base - (age <= 20 ? 6 : age <= 23 ? 3 : age >= 34 ? 2 : 0), 1, 99)]);
+  });
+  edSave(); closeModal(); render();
+  alertBox('Elenco lido', `${Math.min(got.length, room)} jogador(es) adicionados ao ${esc(c.n)}.` + (got.length > room ? ` ${got.length - room} ficaram de fora (limite de ${MAX_SQUAD}).` : '') +
+    (noPos ? ` ${noPos} sem posição reconhecida entraram como meia.` : '') + (noAge ? ` ${noAge} sem idade entraram com 25 anos.` : '') + ' Confira a tabela e ajuste posições e forças.');
+}
+
+function edExport() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({ prancheta_db: 1, clubs: UI.ed.db })], { type: 'application/json' }));
+  a.download = 'prancheta-base.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function edImport(file) {
+  if (!file) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const d = JSON.parse(rd.result).clubs;
+      if (!validDB(d)) throw new Error('formato');
+      UI.ed = { db: d, sel: 0 }; edSave(); render(); toast('Base importada.');
+    } catch (e) { alertBox('Não foi possível importar', 'O arquivo não é uma base de times do Prancheta, ou está incompleto (são 80 clubes, com pelo menos 4 em cada região).'); }
+  };
+  rd.readAsText(file);
 }
 
 /* ---------- ajuda e atalhos ---------- */
