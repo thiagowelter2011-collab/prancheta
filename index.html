@@ -183,38 +183,59 @@ const LIGHT = 'wycs';
 
 const DIVS = ['Série A', 'Série B', 'Série C', 'Série D'];
 
-// nome|UF|cores — a ordem define a força inicial (os 20 primeiros formam a Série A)
+// nome|UF|cores — clubes reais das Séries A a D de 2025; a ordem define a força inicial (os 20 primeiros formam a Série A)
 const CLUBS = [
-  'Real Guanabara|RJ|rk', 'Atlético Bandeirante|SP|wk', 'Imperial Porto Sul|RS|rw', 'Estrela Mineira|MG|bw',
-  'Tricolor da Serra|RS|ck', 'Leão do Capibaribe|PE|ry', 'Baía Azul EC|BA|br', 'Fênix Carioca|RJ|mg',
-  'Operário Paulista|SP|gw', 'Vila Imperial|SP|ws', 'Alvorada FC|DF|yg', 'Minas Unidos|MG|kw',
-  'Atlético Pantanal|MT|gy', 'Jangada EC|CE|nw', 'Araucária FC|PR|gk', 'Maré Alta FC|SP|wc',
-  'Lagoa SC|SC|bk', 'Guará Goiano|GO|gw', 'Locomotiva FC|SP|ok', 'Coroa Carioca|RJ|ny',
+  'Flamengo|RJ|rk', 'Palmeiras|SP|gw', 'Botafogo|RJ|kw', 'Cruzeiro|MG|bw', 'Atlético-MG|MG|kw',
+  'Corinthians|SP|wk', 'São Paulo|SP|wr', 'Fluminense|RJ|mg', 'Internacional|RS|rw', 'Grêmio|RS|ck',
+  'Bahia|BA|br', 'Santos|SP|wk', 'Vasco|RJ|kw', 'Bragantino|SP|wr', 'Fortaleza|CE|rb',
+  'Mirassol|SP|yg', 'Ceará|CE|kw', 'Vitória|BA|rk', 'Sport|PE|rk', 'Juventude|RS|gw',
 
-  'Sertão FC|PE|ry', 'Encontro das Águas|AM|kw', 'Farol da Barra EC|BA|rb', 'Cerrado EC|GO|gy',
-  'Portuários do Litoral|SP|nw', 'Vale do Aço FC|MG|sk', 'Pampa Gaúcho|RS|gr', 'Ilha Bela AC|SC|cw',
-  'Planalto Central|DF|bw', 'Mangue Seco EC|SE|rw', 'Dunas FC|RN|yk', 'Velho Chico AC|AL|bc',
-  'Tropeiros|PR|mw', 'Canavial EC|SP|gk', 'Nova Aurora|PA|by', 'Ouro Fino EC|MG|yk',
-  'Garimpeiros FC|MT|yg', 'Pioneiros do Oeste|PR|rb', 'Boto Rosa FC|AM|pw', 'Recôncavo SC|BA|ok',
+  'Athletico-PR|PR|rk', 'Coritiba|PR|wg', 'Goiás|GO|gw', 'Atlético-GO|GO|rk', 'Cuiabá|MT|gy',
+  'Criciúma|SC|yk', 'Avaí|SC|bw', 'Chapecoense|SC|gw', 'América-MG|MG|gk', 'Novorizontino|SP|yk',
+  'Vila Nova|GO|rw', 'CRB|AL|rw', 'Operário-PR|PR|kw', 'Paysandu|PA|cw', 'Remo|PA|nw',
+  'Botafogo-SP|SP|rw', 'Ferroviária|SP|mw', 'Volta Redonda|RJ|yk', 'Athletic Club|MG|kw', 'Amazonas|AM|yk',
 
-  'Açaí FC|PA|pw', 'Carnaúba EC|CE|gy', 'Tamandaré AC|PE|bw', 'Cafezal FC|SP|mk',
-  'União Ribeirinha|AM|gw', 'Mata Atlântica SC|ES|gk', 'Vitória-Régia FC|AC|gp', 'Sol Nascente|PB|yr',
-  'Estrela do Agreste|PE|rw', 'Boiadeiros|MS|ok', 'Petroleiros FC|RJ|ky', 'Ipê Amarelo EC|TO|yg',
-  'Quilombo FC|AL|kr', 'Tecelões|SC|bw', 'Cachoeira Grande|MG|cw', 'Monte Verde AC|RO|gw',
-  'Chapada FC|MT|or', 'Salinas EC|RN|wb', 'Metalúrgicos|SP|sr', 'Fronteira FC|RS|rk',
+  'Náutico|PE|rw', 'Ponte Preta|SP|kw', 'Guarani|SP|gw', 'Londrina|PR|cw', 'Figueirense|SC|kw',
+  'CSA|AL|bw', 'ABC|RN|kw', 'Botafogo-PB|PB|kw', 'Confiança|SE|bw', 'Ypiranga|RS|yg',
+  'Caxias|RS|mw', 'São Bernardo|SP|yk', 'Brusque|SC|yg', 'Ituano|SP|rk', 'Floresta|CE|gw',
+  'Tombense|MG|rw', 'Retrô|PE|yb', 'Maringá|PR|kw', 'Anápolis|GO|rw', 'Itabaiana|SE|bw',
 
-  'Babaçu FC|MA|gy', 'Lavradores|RR|rw', 'Mandacaru EC|PI|gw', 'Seringal AC|AC|yg',
-  'Marajó FC|PA|rb', 'Canoeiros|TO|bw', 'Buriti EC|MA|go', 'Pedra Azul|ES|cn',
-  'Ferradura FC|MS|kr', 'Ventania EC|PR|wb', 'Bandeira Branca|SP|wr', 'Colina Verde|RJ|gw',
-  'Guaraná AC|AM|rg', 'Macaúba FC|MG|yk', 'Oeste Bravo|SC|rk', 'Barranco FC|AP|ok',
-  'Jacarandá EC|GO|py', 'Caatinga FC|BA|oy', 'Garças do Sul|RS|wc', 'Catavento FC|CE|by'
+  'Santa Cruz|PE|rk', 'América-RN|RN|rw', 'Sampaio Corrêa|MA|yr', 'Portuguesa|SP|rg', 'Inter de Limeira|SP|kw',
+  'Joinville|SC|rk', 'Brasil de Pelotas|RS|ry', 'Treze|PB|kw', 'Campinense|PB|rk', 'ASA|AL|kw',
+  'Ferroviário|CE|rw', 'Manaus|AM|gw', 'Rio Branco-AC|AC|rw', 'Luverdense|MT|gw', 'Aparecidense|GO|by',
+  'Cascavel|PR|yk', 'Água Santa|SP|bw', 'Portuguesa-RJ|RJ|rg', 'Central|PE|kw', 'Altos|PI|gy'
 ];
+
+// Elencos da Série A: posição:nome:idade:força. Escritos de memória (referência: 2025), com forças estimadas;
+// podem estar desatualizados. As vagas que faltarem no elenco são completadas com jogadores gerados.
+const SQUADS = {
+  'Flamengo': 'G:Rossi:29:82;LD:Varela:32:78;LD:Emerson Royal:26:78;Z:Léo Pereira:29:83;Z:Léo Ortiz:29:83;Z:Danilo:33:80;LE:Alex Sandro:34:80;LE:Ayrton Lucas:28:79;V:Pulgar:31:81;V:Jorginho:33:82;V:Allan:28:76;M:Arrascaeta:31:88;M:De la Cruz:28:82;M:Saúl:30:79;M:Carrascal:27:80;M:Luiz Araújo:29:80;A:Pedro:28:86;A:Bruno Henrique:34:80;A:Plata:24:80;A:Samuel Lino:25:82;A:Everton Cebolinha:29:79',
+  'Palmeiras': 'G:Weverton:37:81;LD:Giay:21:76;LD:Khellven:24:76;Z:Gustavo Gómez:32:84;Z:Murilo:28:80;Z:Micael:25:76;Z:Bruno Fuchs:26:76;LE:Piquerez:27:83;V:Aníbal Moreno:26:80;V:Lucas Evangelista:30:78;V:Emiliano Martínez:26:77;M:Raphael Veiga:30:83;M:Andreas Pereira:29:81;M:Maurício:24:80;M:Felipe Anderson:32:79;A:Vitor Roque:20:83;A:Flaco López:24:83;A:Facundo Torres:25:79;A:Ramón Sosa:26:79;A:Paulinho:25:80',
+  'Botafogo': 'G:John:29:80;LD:Vitinho:26:78;Z:Barboza:30:80;Z:Bastos:33:78;Z:David Ricardo:22:76;LE:Alex Telles:32:80;LE:Cuiabano:22:77;V:Marlon Freitas:30:81;V:Danilo:24:81;V:Allan:34:76;V:Newton:25:75;M:Savarino:28:82;M:Santiago Rodríguez:25:77;M:Montoro:18:76;A:Artur:27:79;A:Arthur Cabral:27:79;A:Matheus Martins:22:77;A:Joaquín Correa:31:77;A:Mastriani:32:75',
+  'Cruzeiro': 'G:Cássio:38:80;LD:William:30:79;LD:Fagner:36:74;Z:Fabrício Bruno:29:81;Z:Villalba:27:78;Z:Jonathan Jesus:21:76;LE:Kaiki:22:79;V:Lucas Romero:31:80;V:Lucas Silva:32:79;V:Walace:30:76;V:Christian:24:77;M:Matheus Pereira:29:85;M:Matheus Henrique:27:77;M:Eduardo:35:74;A:Kaio Jorge:23:84;A:Gabigol:29:79;A:Wanderson:30:78;A:Sinisterra:26:76;A:Marquinhos:22:75;A:Bolasie:36:73',
+  'Atlético-MG': 'G:Everson:35:81;LD:Natanael:23:76;LD:Saravia:32:75;Z:Junior Alonso:32:80;Z:Lyanco:28:78;Z:Ruan:26:76;Z:Vitor Hugo:34:75;LE:Guilherme Arana:28:82;LE:Caio Paulista:27:75;V:Alan Franco:27:78;V:Fausto Vera:25:77;V:Alexsander:21:76;V:Igor Gomes:26:76;M:Gustavo Scarpa:31:81;M:Bernard:33:76;M:Reinier:23:74;A:Hulk:39:83;A:Dudu:33:78;A:Cuello:25:78;A:Rony:30:77;A:Júnior Santos:30:76;A:Biel:24:75',
+  'Corinthians': 'G:Hugo Souza:26:82;LD:Matheuzinho:24:77;Z:André Ramalho:33:77;Z:Gustavo Henrique:32:76;Z:Cacá:26:76;Z:Félix Torres:28:76;LE:Matheus Bidu:26:76;LE:Angileri:31:75;V:Raniele:28:78;V:José Martínez:31:77;V:Breno Bidon:20:78;V:Maycon:28:75;M:Rodrigo Garro:27:83;M:Carrillo:34:77;M:Charles:29:74;A:Memphis Depay:31:85;A:Yuri Alberto:24:83;A:Romero:33:76;A:Talles Magno:23:75;A:Gui Negão:18:72',
+  'São Paulo': 'G:Rafael:36:80;LD:Cédric Soares:33:74;LD:Maik:21:71;Z:Arboleda:33:80;Z:Alan Franco:28:78;Z:Sabino:28:76;Z:Ferraresi:26:75;LE:Enzo Díaz:29:76;LE:Wendell:31:76;V:Pablo Maia:23:78;V:Bobadilla:24:78;V:Marcos Antônio:25:78;V:Luiz Gustavo:37:75;M:Lucas Moura:32:83;M:Oscar:33:80;M:Rodriguinho:21:73;A:Calleri:31:81;A:Luciano:32:80;A:André Silva:28:77;A:Ferreira:27:76;A:Rigoni:32:75',
+  'Fluminense': 'G:Fábio:44:80;LD:Samuel Xavier:35:77;LD:Guga:27:75;Z:Thiago Silva:40:82;Z:Freytes:25:77;Z:Ignácio:28:76;LE:Renê:33:75;LE:Fuentes:27:76;V:Martinelli:23:80;V:Hércules:24:78;V:Nonato:27:76;V:Bernal:23:75;M:Ganso:35:78;M:Acosta:31:78;M:Lima:29:76;A:Cano:37:79;A:Canobbio:26:79;A:Serna:28:77;A:Soteldo:28:77;A:Everaldo:34:76;A:Keno:35:75',
+  'Internacional': 'G:Rochet:32:81;LD:Braian Aguirre:22:76;Z:Vitão:25:80;Z:Mercado:38:76;Z:Victor Gabriel:21:75;Z:Juninho:30:74;LE:Bernabei:24:80;V:Fernando:38:77;V:Thiago Maia:28:77;V:Bruno Henrique:35:75;V:Ronaldo:28:74;V:Richard:31:73;M:Alan Patrick:34:84;M:Bruno Tabata:28:77;M:Óscar Romero:33:74;A:Borré:29:80;A:Wesley:26:78;A:Carbonero:26:78;A:Vitinho:26:76;A:Ricardo Mathias:19:73',
+  'Grêmio': 'G:Tiago Volpi:34:78;LD:João Pedro:28:74;LD:Marcos Rocha:36:73;Z:Kannemann:34:77;Z:Wagner Leonardo:26:77;Z:Gustavo Martins:22:75;Z:Balbuena:34:75;LE:Marlon:28:76;V:Villasanti:28:80;V:Arthur:29:80;V:Dodi:29:76;V:Cuéllar:32:76;V:Edenílson:35:74;M:Cristaldo:28:78;M:Monsalve:21:76;A:Braithwaite:34:79;A:Carlos Vinícius:30:77;A:Pavón:29:76;A:Alysson:19:76;A:Amuzu:25:76;A:Willian:37:76',
+  'Bahia': 'G:Marcos Felipe:29:78;G:Ronaldo:29:77;LD:Gilberto:32:77;LD:Santiago Arias:33:75;Z:Ramos Mingo:23:77;Z:Gabriel Xavier:24:76;Z:David Duarte:30:76;Z:Kanu:28:75;LE:Luciano Juba:26:80;LE:Iago Borduchi:28:75;V:Jean Lucas:27:80;V:Caio Alexandre:26:79;V:Acevedo:29:76;V:Rezende:30:74;M:Everton Ribeiro:36:80;M:Cauly:30:77;M:Rodrigo Nestor:25:76;M:Michel Araújo:28:75;A:Erick Pulga:24:78;A:Willian José:33:77;A:Ademir:30:77;A:Kayky:22:76;A:Tiago:20:73',
+  'Santos': 'G:Gabriel Brazão:24:80;LD:Mayke:32:75;LD:Igor Vinícius:28:75;Z:Luan Peres:31:76;Z:Adonis Frías:27:76;Z:Zé Ivaldo:28:75;LE:Souza:19:76;LE:Escobar:28:75;V:Zé Rafael:32:77;V:João Schmidt:32:76;V:Willian Arão:33:75;V:Tomás Rincón:37:73;M:Neymar:33:86;M:Rollheiser:25:77;M:Victor Hugo:21:74;M:Gabriel Bontempo:20:73;A:Guilherme:30:78;A:Barreal:25:76;A:Tiquinho Soares:34:76;A:Lautaro Díaz:27:74;A:Robinho Jr:17:68',
+  'Vasco': 'G:Léo Jardim:30:81;LD:Paulo Henrique:29:77;LD:Puma Rodríguez:28:75;Z:Carlos Cuesta:26:77;Z:Robert Renan:22:77;Z:João Victor:27:76;Z:Lucas Freitas:24:76;LE:Lucas Piton:25:79;LE:Victor Luís:32:72;V:Tchê Tchê:33:76;V:Jair:30:76;V:Cauan Barros:21:76;V:Thiago Mendes:33:76;V:Hugo Moura:27:75;M:Philippe Coutinho:33:81;M:Nuno Moreira:26:78;M:Matheus França:21:75;A:Rayan:19:81;A:Vegetti:36:80;A:Andrés Gómez:23:77;A:David:30:75;A:GB:20:72',
+  'Bragantino': 'G:Cleiton:28:78;G:Lucão:24:74;LD:Hurtado:24:75;LD:Nathan Mendes:22:73;Z:Pedro Henrique:30:76;Z:Alix Vinicius:25:74;Z:Guzmán Rodríguez:25:74;Z:Eduardo Santos:27:73;LE:Juninho Capixaba:28:77;LE:Vanderlan:22:74;V:Gabriel:24:75;V:Matheus Fernandes:27:75;V:Eric Ramires:24:75;V:Fabinho:23:74;M:Jhon Jhon:22:79;M:Lucas Barbosa:24:75;M:Gustavinho:22:72;A:Eduardo Sasha:33:77;A:Isidro Pitta:26:76;A:Thiago Borbas:23:75;A:Vinicinho:21:74;A:Mosquera:24:74;A:Fernando:22:73',
+  'Fortaleza': 'G:João Ricardo:36:77;G:Brenno:26:74;LD:Tinga:31:75;LD:Mancuso:26:74;Z:Kuscevic:29:77;Z:Brítez:33:75;Z:Gastón Ávila:23:75;Z:Gustavo Mancha:21:73;LE:Bruno Pacheco:33:74;LE:Diogo Barbosa:32:74;V:Pol Fernández:33:76;V:Lucas Sasha:35:74;V:Matheus Rossetto:29:74;V:Zé Welison:30:73;V:Pierre:23:73;M:Pochettino:29:77;M:Calebe:25:74;M:Lucca Prior:22:72;A:Lucero:33:79;A:Moisés:29:76;A:Breno Lopes:29:76;A:Yago Pikachu:33:76;A:Marinho:35:75;A:Deyverson:34:75',
+  'Mirassol': 'G:Walter:37:78;LD:Lucas Ramon:31:76;LD:Daniel Borges:32:73;Z:Jemmes:25:76;Z:João Victor:27:75;Z:Gabriel Knesowitsch:30:72;Z:Luiz Otávio:32:72;LE:Reinaldo:35:78;LE:Felipe Jonatan:27:74;V:Danielzinho:31:77;V:Neto Moura:28:76;V:José Aldo:26:76;V:Yuri Lara:31:73;M:Gabriel:32:76;M:Shaylon:28:76;M:Chico Kim:34:73;A:Chico da Costa:30:76;A:Negueba:26:76;A:Alesson:26:76;A:Edson Carioca:28:74;A:Cristian Renato:26:74;A:Carlos Eduardo:28:73',
+  'Ceará': 'G:Bruno Ferreira:30:76;LD:Fabiano Souza:26:73;LD:Rafael Ramos:30:72;Z:Marllon:33:74;Z:Willian Machado:29:74;Z:Éder:30:73;Z:Marcos Victor:23:73;LE:Matheus Bahia:26:74;LE:Nicolas:28:72;V:Fernando Sobral:30:74;V:Dieguinho:29:74;V:Lourenço:28:74;V:Richardson:34:72;M:Lucas Mugni:33:74;M:Vina:34:74;M:Matheus Araújo:23:72;A:Pedro Raul:28:76;A:Galeano:25:74;A:Pedro Henrique:35:74;A:Aylon:33:73;A:Fernandinho:28:72',
+  'Vitória': 'G:Lucas Arcanjo:27:76;LD:Raúl Cáceres:33:73;LD:Claudinho:24:72;Z:Lucas Halter:25:76;Z:Zé Marcos:27:73;Z:Edu:25:72;Z:Neris:33:71;LE:Jamerson:26:73;LE:Ramon:24:73;V:Baralhas:26:75;V:Ronald:22:73;V:Willian Oliveira:32:72;V:Ricardo Ryller:31:71;M:Matheuzinho:27:76;M:Erick:27:74;M:Aitor Cantalapiedra:29:73;A:Renato Kayzer:29:74;A:Osvaldo:38:72;A:Renzo López:31:72;A:Lucas Braga:28:72;A:Fabrício:25:71',
+  'Sport': 'G:Gabriel:32:74;G:Caíque França:29:73;LD:Matheus Alexandre:26:72;LD:Aderlan:35:71;Z:Rafael Thyere:32:73;Z:João Silva:26:72;Z:Ramon Menezes:23:72;LE:Luan Cândido:24:73;LE:Kévyson:21:71;V:Zé Lucas:17:73;V:Christian Rivera:28:73;V:Sérgio Oliveira:33:73;V:Pedro Augusto:28:71;M:Lucas Lima:35:74;M:Matheusinho:27:73;M:Hyoran:32:72;A:Chrystian Barletta:24:74;A:Derik Lacerda:26:73;A:Pablo:33:72;A:Romarinho:34:72;A:Gonçalo Paciência:31:72;A:Léo Pereira:25:71',
+  'Juventude': 'G:Jandrei:32:74;G:Gustavo:32:73;LD:Reginaldo:32:71;LD:Igor Formiga:26:71;Z:Rodrigo Sam:29:72;Z:Abner:28:72;Z:Wilker Ángel:32:72;Z:Marcos Paulo:25:71;LE:Alan Ruschel:36:71;LE:Marcelo Hermes:30:71;V:Jadson:31:73;V:Luis Mandaca:24:73;V:Caíque:30:72;V:Giraldo:29:71;M:Nenê:44:73;M:Jean Carlos:33:72;M:Lucas Fernandes:28:71;A:Gilberto:36:73;A:Gabriel Taliari:27:73;A:Ênio:24:72;A:Batalla:28:72;A:Matheus Babi:28:71'
+};
 
 // clubes estrangeiros da Taça das Américas: nome|país|cores|força
 const FOREIGN = [
-  'Atlético Rioplatense|ARG|cw|82', 'Porteños FC|ARG|by|80', 'Oriental de Montevideo|URU|kw|78', 'Cordillera SC|CHI|rb|77',
-  'Cafeteros FC|COL|gy|76', 'Asunción Unido|PAR|rw|74', 'Mitad del Mundo SC|EQU|yb|74', 'Inca Real|PER|rw|72',
-  'Altiplano FC|BOL|gw|70', 'Llaneros de Oro|VEN|mk|69'
+  'River Plate|ARG|wr|82', 'Boca Juniors|ARG|by|80', 'Peñarol|URU|yk|78', 'Atlético Nacional|COL|gw|77',
+  'Nacional|URU|wb|76', 'LDU Quito|EQU|wn|75', 'Olimpia|PAR|wk|74', 'Colo-Colo|CHI|wk|73',
+  'Universitario|PER|wm|72', 'Bolívar|BOL|cw|71'
 ];
 const FN_ES = ['Agustín', 'Alejandro', 'Ángel', 'Carlos', 'Cristian', 'Diego', 'Emiliano', 'Esteban', 'Facundo', 'Federico', 'Franco', 'Gonzalo',
   'Hernán', 'Ignacio', 'Javier', 'Joaquín', 'Jorge', 'Juan', 'Julián', 'Lautaro', 'Leandro', 'Luis', 'Marcos', 'Martín', 'Matías', 'Maxi', 'Nicolás',
@@ -430,10 +451,20 @@ function mkTeam(s, i) {
     xi: [], bench: [], style: 0, mark: R() < 0.55 ? 0 : R() < 0.85 ? 1 : 2, train: 0, players: [],
     coach: { n: pick(FN) + ' ' + pick(SN), pts: 0 }
   };
-  t.std = R() < 0.3 ? 'Arena ' + name.replace(/ (FC|EC|AC|SC)$/, '') : (ext ? 'Estadio ' + pick(FN_ES) + ' ' + pick(SN_ES) : 'Estádio ' + pick(FN) + ' ' + pick(SN));
+  t.std = 'Casa do ' + name;
   t.cap = Math.max(2000, Math.round(demand(rep) * (0.85 + R() * 0.45) / 500) * 500);
   t.ticket = TICKET[t.div];
-  SQUAD.forEach((pos, j) => {
+  // elenco real, quando existe; as posições que faltarem são completadas com garotos gerados
+  const need = SQUAD.slice();
+  (SQUADS[name] || '').split(';').filter(Boolean).forEach(x => {
+    const [pos, nm, age, f] = x.split(':'), p = mkPlayer(pos, +f, +age, +f + (+age < 24 ? ri(2, 8) : +age < 27 ? ri(0, 3) : 0), ext);
+    p.n = nm; t.players.push(p);
+    const k = need.indexOf(pos);
+    if (k >= 0) need.splice(k, 1);
+  });
+  const real = t.players.length > 0;
+  need.forEach((pos, j) => {
+    if (real) { t.players.push(mkPlayer(pos, rep - 10 + gauss() * 3, ri(18, 22), rep + ri(-4, 6), ext)); return; }
     const age = ri(18, 34);
     let f = rep + gauss() * 4.5 - (j === 2 ? 7 : 0), pot;
     if (age < 22) { f -= (22 - age) * 2.2; pot = rep + ri(0, 10); }
@@ -1960,7 +1991,7 @@ function go(tab) {
 function vStart() {
   if (!UI.creating) {
     return `<div class="start"><div class="hero"><div class="logo">Pran<span>cheta</span></div>
-      <p>Manager de futebol brasileiro com clubes fictícios. Monte a escalação, defina a tática e leve seu time da Série D ao título da Série A.</p>
+      <p>Manager de futebol brasileiro. Monte a escalação, defina a tática e leve seu time da Série D ao título da Série A. Jogo de fã, sem vínculo com clubes, jogadores ou ligas; os elencos são aproximados.</p>
       <div class="row">${hasSave() ? '<button class="primary" onclick="continueGame()">Continuar carreira</button>' : ''}
       <button class="${hasSave() ? '' : 'primary'}" onclick="newGameScreen()">Novo jogo</button>
       <button onclick="netJoinBox()">Entrar em sala online</button>
